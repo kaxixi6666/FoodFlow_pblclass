@@ -16,7 +16,7 @@ const ProtectedDashboardLayout = () => (
 );
 
 // Determine basename based on environment
-const basename = import.meta.env.PROD ? "/FoodFlow_pblclass" : "/FoodFlow";
+const basename = import.meta.env.PROD ? "/FoodFlow_pblclass/" : "/FoodFlow/";
 
 export const router = createHashRouter([
   {
