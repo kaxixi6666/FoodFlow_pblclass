@@ -49,20 +49,14 @@ public class InventoryController {
 
         Inventory inventory;
         if (!existingInventoryItems.isEmpty()) {
-            // Merge with existing inventory item
+            // Update existing inventory item
             inventory = existingInventoryItems.get(0);
-            double quantityToAdd = request.getQuantity() != null ? request.getQuantity() : 1.0;
-            inventory.setQuantity(inventory.getQuantity() + quantityToAdd);
             inventory.setLastUpdated(LocalDateTime.now());
             entityManager.merge(inventory);
         } else {
             // Create new inventory item
             inventory = new Inventory();
             inventory.setIngredient(ingredient);
-            double quantity = request.getQuantity() != null ? request.getQuantity() : 1.0;
-            inventory.setQuantity(quantity);
-            String unit = request.getUnit() != null ? request.getUnit() : "piece";
-            inventory.setUnit(unit);
             inventory.setLastUpdated(LocalDateTime.now());
             inventory.setCreatedAt(LocalDateTime.now());
             entityManager.persist(inventory);
@@ -84,8 +78,6 @@ public class InventoryController {
             item.setId(inventory.getId());
             item.setName(inventory.getIngredient().getName());
             item.setCategory(inventory.getIngredient().getCategory());
-            item.setQuantity(inventory.getQuantity());
-            item.setUnit(inventory.getUnit());
             // Convert to Tokyo time
             ZonedDateTime tokyoTime = inventory.getLastUpdated().atZone(ZoneId.systemDefault()).withZoneSameInstant(tokyoZone);
             // Format with pattern: yyyy-MM-dd HH:mm:ss
@@ -104,7 +96,6 @@ public class InventoryController {
             return ResponseEntity.notFound().build();
         }
 
-        inventory.setQuantity(request.getQuantity());
         inventory.setLastUpdated(LocalDateTime.now());
         entityManager.merge(inventory);
         return ResponseEntity.ok(inventory);
@@ -126,8 +117,6 @@ public class InventoryController {
         private String name;
         private String category;
         private String description;
-        private Double quantity;
-        private String unit;
 
         // Getters and setters
         public Long getIngredientId() { return ingredientId; }
@@ -138,25 +127,16 @@ public class InventoryController {
         public void setCategory(String category) { this.category = category; }
         public String getDescription() { return description; }
         public void setDescription(String description) { this.description = description; }
-        public Double getQuantity() { return quantity; }
-        public void setQuantity(Double quantity) { this.quantity = quantity; }
-        public String getUnit() { return unit; }
-        public void setUnit(String unit) { this.unit = unit; }
     }
 
     public static class InventoryUpdateRequest {
-        private double quantity;
-
-        public double getQuantity() { return quantity; }
-        public void setQuantity(double quantity) { this.quantity = quantity; }
+        // Empty class for future use
     }
 
     public static class InventoryResponse {
         private Long id;
         private String name;
         private String category;
-        private double quantity;
-        private String unit;
         private String lastUpdated;
 
         // Getters and setters
@@ -166,10 +146,6 @@ public class InventoryController {
         public void setName(String name) { this.name = name; }
         public String getCategory() { return category; }
         public void setCategory(String category) { this.category = category; }
-        public double getQuantity() { return quantity; }
-        public void setQuantity(double quantity) { this.quantity = quantity; }
-        public String getUnit() { return unit; }
-        public void setUnit(String unit) { this.unit = unit; }
         public String getLastUpdated() { return lastUpdated; }
         public void setLastUpdated(String lastUpdated) { this.lastUpdated = lastUpdated; }
     }

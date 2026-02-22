@@ -15,12 +15,6 @@ public class Inventory {
     @JoinColumn(name = "ingredient_id", nullable = false)
     private Ingredient ingredient;
 
-    @Column(nullable = false)
-    private double quantity;
-
-    @Column(nullable = false)
-    private String unit;
-
     @Column(name = "last_updated")
     private LocalDateTime lastUpdated;
 
@@ -53,22 +47,6 @@ public class Inventory {
 
     public void setIngredient(Ingredient ingredient) {
         this.ingredient = ingredient;
-    }
-
-    public double getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(double quantity) {
-        this.quantity = quantity;
-    }
-
-    public String getUnit() {
-        return unit;
-    }
-
-    public void setUnit(String unit) {
-        this.unit = unit;
     }
 
     public LocalDateTime getLastUpdated() {

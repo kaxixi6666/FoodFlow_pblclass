@@ -14,8 +14,6 @@ interface Recipe {
 
 interface InventoryItem {
   name: string;
-  quantity: number;
-  unit: string;
 }
 
 // Mock inventory data
