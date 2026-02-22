@@ -63,8 +63,23 @@ export function Inventory() {
 
 
 
-  const clearSelected = () => {
-    setInventory(inventory.filter(item => !item.selected));
+  const clearSelected = async () => {
+    const selectedItems = inventory.filter(item => item.selected);
+    
+    try {
+      const deletePromises = selectedItems.map(item => 
+        fetch(`${API_ENDPOINTS.INVENTORY}/${item.id}`, {
+          method: 'DELETE'
+        })
+      );
+      
+      await Promise.all(deletePromises);
+      
+      setInventory(inventory.filter(item => !item.selected));
+    } catch (error) {
+      console.error('Error deleting items:', error);
+      alert('Failed to delete items. Please try again.');
+    }
   };
 
   const clearAllSelections = () => {
