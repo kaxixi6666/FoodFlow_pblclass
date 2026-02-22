@@ -1,6 +1,7 @@
 import { Search, ChevronDown, Trash2, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { API_ENDPOINTS } from "../config/api";
 
 interface InventoryItem {
   id: number;
@@ -23,7 +24,7 @@ export function Inventory() {
   useEffect(() => {
     const fetchInventory = async () => {
       try {
-        const response = await fetch('/api/inventory');
+        const response = await fetch(API_ENDPOINTS.INVENTORY);
         const data = await response.json();
         
         // Transform data to match InventoryItem interface

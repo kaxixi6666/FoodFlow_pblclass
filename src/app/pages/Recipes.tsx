@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { Button } from "../components/ui/button";
+import { API_ENDPOINTS } from "../config/api";
 
 interface Ingredient {
   id: number;
@@ -50,7 +51,7 @@ export function Recipes() {
     const fetchRecipes = async () => {
       try {
         // Fetch all recipes
-        const response = await fetch('http://localhost:8080/api/recipes');
+        const response = await fetch(API_ENDPOINTS.RECIPES);
         const data = await response.json();
         
         // Separate recipes by status
@@ -68,7 +69,7 @@ export function Recipes() {
     const fetchIngredients = async () => {
       try {
         // Fetch all ingredients
-        const response = await fetch('http://localhost:8080/api/ingredients');
+        const response = await fetch(API_ENDPOINTS.INGREDIENTS);
         const data = await response.json();
         setAllIngredients(data);
       } catch (error) {
@@ -136,7 +137,7 @@ export function Recipes() {
       console.log("Sending recipe data:", JSON.stringify(recipeData, null, 2));
       
       // Call API to save recipe
-      const response = await fetch('http://localhost:8080/api/recipes', {
+      const response = await fetch(API_ENDPOINTS.RECIPES, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -164,7 +165,7 @@ export function Recipes() {
       // Refresh recipes list
       const fetchRecipes = async () => {
         try {
-          const response = await fetch('http://localhost:8080/api/recipes');
+          const response = await fetch(API_ENDPOINTS.RECIPES);
           const data = await response.json();
           const draftRecipes = data.filter((recipe: Recipe) => recipe.status === 'draft');
           const publicRecipesList = data.filter((recipe: Recipe) => recipe.status === 'public');
@@ -208,7 +209,7 @@ export function Recipes() {
       };
       
       // Call API to save recipe
-      const response = await fetch('http://localhost:8080/api/recipes', {
+      const response = await fetch(API_ENDPOINTS.RECIPES, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -232,7 +233,7 @@ export function Recipes() {
       // Refresh recipes list
       const fetchRecipes = async () => {
         try {
-          const response = await fetch('http://localhost:8080/api/recipes');
+          const response = await fetch(API_ENDPOINTS.RECIPES);
           const data = await response.json();
           const draftRecipes = data.filter((recipe: Recipe) => recipe.status === 'draft');
           const publicRecipesList = data.filter((recipe: Recipe) => recipe.status === 'public');
@@ -325,7 +326,7 @@ export function Recipes() {
     if (!editingRecipe) return;
     
     try {
-      const response = await fetch(`http://localhost:8080/api/recipes/${editingRecipe.id}`, {
+      const response = await fetch(`${API_ENDPOINTS.RECIPES}/${editingRecipe.id}`, {
         method: 'DELETE'
       });
       
@@ -339,7 +340,7 @@ export function Recipes() {
       
       const fetchRecipes = async () => {
         try {
-          const response = await fetch('http://localhost:8080/api/recipes');
+          const response = await fetch(API_ENDPOINTS.RECIPES);
           const data = await response.json();
           const draftRecipes = data.filter((recipe: Recipe) => recipe.status === 'draft');
           const publicRecipesList = data.filter((recipe: Recipe) => recipe.status === 'public');
@@ -387,7 +388,7 @@ export function Recipes() {
       
       console.log("Updating recipe data:", JSON.stringify(recipeData, null, 2));
       
-      const response = await fetch(`http://localhost:8080/api/recipes/${editingRecipe.id}`, {
+      const response = await fetch(`${API_ENDPOINTS.RECIPES}/${editingRecipe.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -416,7 +417,7 @@ export function Recipes() {
       
       const fetchRecipes = async () => {
         try {
-          const response = await fetch('http://localhost:8080/api/recipes');
+          const response = await fetch(API_ENDPOINTS.RECIPES);
           const data = await response.json();
           const draftRecipes = data.filter((recipe: Recipe) => recipe.status === 'draft');
           const publicRecipesList = data.filter((recipe: Recipe) => recipe.status === 'public');
