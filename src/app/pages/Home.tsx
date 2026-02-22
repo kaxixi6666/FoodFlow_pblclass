@@ -165,7 +165,8 @@ export function Home() {
           unit: unit
         };
         
-        return fetch('/api/inventory', {
+        const API_BASE = "https://foodflow-pblclass.onrender.com/api";
+        return fetch(`${API_BASE}/inventory`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
