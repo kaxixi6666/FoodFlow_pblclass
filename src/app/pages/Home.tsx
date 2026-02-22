@@ -155,18 +155,12 @@ export function Home() {
     try {
       // Call backend API to add ingredients to inventory
       const addPromises = ingredientsToAdd.map(ingredient => {
-        // Set default quantity and unit
-        const quantity = 1;
-        const unit = "pcs";
-        
         // Get category from ingredient or default to "Uncategorized"
         const category = 'category' in ingredient ? ingredient.category : "Uncategorized";
         
         const inventoryRequest = {
           name: ingredient.name,
-          category: category,
-          quantity: quantity,
-          unit: unit
+          category: category
         };
         
         return fetchAPI(API_ENDPOINTS.INVENTORY, {
