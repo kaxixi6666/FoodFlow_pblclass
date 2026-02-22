@@ -258,9 +258,9 @@ export function Recipes() {
     setServings("");
     setPrepTime("");
     setCookTime("");
-    if (!isEditing) {
-      setIsCreating(false);
-    }
+    setIsCreating(false);
+    setIsEditing(false);
+    setEditingRecipe(null);
   };
 
   const handleRecipeClick = (recipe: Recipe) => {
