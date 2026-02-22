@@ -70,11 +70,17 @@ export function Inventory() {
     const selectedItems = inventory.filter(item => item.selected);
     
     try {
-      const deletePromises = selectedItems.map(item => 
-        fetch(`${API_ENDPOINTS.INVENTORY}/${item.id}`, {
+      const deletePromises = selectedItems.map(async (item) => {
+        const response = await fetch(`${API_ENDPOINTS.INVENTORY}/${item.id}`, {
           method: 'DELETE'
-        })
-      );
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to delete item ${item.id}: ${response.status}`);
+        }
+        
+        return response;
+      });
       
       await Promise.all(deletePromises);
       
