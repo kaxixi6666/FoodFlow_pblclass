@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createHashRouter } from "react-router";
 import { DashboardLayout } from "./components/DashboardLayout";
 import { Home } from "./pages/Home";
 import { Inventory } from "./pages/Inventory";
@@ -18,7 +18,7 @@ const ProtectedDashboardLayout = () => (
 // Determine basename based on environment
 const basename = import.meta.env.PROD ? "/FoodFlow_pblclass" : "/FoodFlow";
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   {
     path: "/login",
     Component: Login,
