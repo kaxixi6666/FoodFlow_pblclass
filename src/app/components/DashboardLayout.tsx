@@ -110,10 +110,10 @@ export function DashboardLayout() {
             <>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
-                  {getUserInitials(user?.name)}
+                  {getUserInitials(user?.username)}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">{user?.name || "User"}</p>
+                  <p className="text-sm font-medium text-foreground">{user?.username || "User"}</p>
                   <p className="text-xs text-muted-foreground">{user?.email || "user@example.com"}</p>
                 </div>
               </div>
@@ -149,7 +149,7 @@ export function DashboardLayout() {
               <Settings className="w-5 h-5 text-gray-600" />
             </button>
             <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white cursor-pointer hover:ring-2 hover:ring-primary hover:ring-offset-2 transition-all">
-              {getUserInitials(user?.name)}
+              {getUserInitials(user?.username)}
             </div>
           </div>
         </header>
