@@ -41,11 +41,10 @@ public class InventoryController {
             entityManager.persist(ingredient);
         }
 
-        // Check if inventory item with same ingredient and unit already exists
+        // Check if inventory item with same ingredient already exists
         List<Inventory> existingInventoryItems = entityManager.createQuery(
-            "SELECT i FROM Inventory i WHERE i.ingredient.id = :ingredientId AND i.unit = :unit", Inventory.class
+            "SELECT i FROM Inventory i WHERE i.ingredient.id = :ingredientId", Inventory.class
         ).setParameter("ingredientId", ingredient.getId())
-         .setParameter("unit", request.getUnit())
          .getResultList();
 
         Inventory inventory;
