@@ -4,54 +4,82 @@ import { Button } from "../components/ui/button";
 import { Label } from "../components/ui/label";
 import { useNavigate } from "react-router";
 import { useAuth } from "../components/AuthProvider";
+import { API_ENDPOINTS, fetchAPI } from "../config/api";
 
 export function Login() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
-  const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
-    if (isRegistering) {
-      // Register logic
-      if (!name || !email || !password) {
-        setError("Please fill in all fields");
-        return;
-      }
+    try {
+      if (isRegistering) {
+        // Register logic
+        if (!username || !password) {
+          setError("Please fill in all required fields");
+          setLoading(false);
+          return;
+        }
 
-      // Save user to localStorage (mock)
-      const users = JSON.parse(localStorage.getItem("users") || "[]");
-      const existingUser = users.find((user: any) => user.email === email);
-      
-      if (existingUser) {
-        setError("Email already registered");
-        return;
-      }
+        const response = await fetchAPI(API_ENDPOINTS.USERS_REGISTER, {
+          method: 'POST',
+          body: JSON.stringify({
+            username,
+            password,
+            email
+          })
+        });
 
-      const newUser = { id: Date.now(), name, email, password };
-      users.push(newUser);
-      localStorage.setItem("users", JSON.stringify(users));
-      
-      // Auto login after registration
-      login(newUser);
-      navigate("/");
-    } else {
-      // Login logic
-      const users = JSON.parse(localStorage.getItem("users") || "[]");
-      const user = users.find((user: any) => user.email === email && user.password === password);
-      
-      if (user) {
-        login(user);
-        navigate("/");
+        if (response.success) {
+          // Registration successful, auto login
+          const loginResponse = await fetchAPI(API_ENDPOINTS.USERS_LOGIN, {
+            method: 'POST',
+            body: JSON.stringify({
+              username,
+              password
+            })
+          });
+
+          if (loginResponse.success) {
+            login(loginResponse.user);
+            navigate("/");
+          } else {
+            setError("Registration successful but login failed");
+          }
+        } else {
+          setError(response.message || "Registration failed");
+        }
       } else {
-        setError("Invalid email or password");
+        // Login logic
+        const response = await fetchAPI(API_ENDPOINTS.USERS_LOGIN, {
+          method: 'POST',
+          body: JSON.stringify({
+            username,
+            password
+          })
+        });
+
+        if (response.success) {
+          login(response.user);
+          navigate("/");
+        } else {
+          setError(response.message || "Invalid username or password");
+        }
       }
+    } catch (err: any) {
+      console.error('Auth error:', err);
+      setError(isRegistering ? "Registration failed. Please try again." : "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,37 +102,54 @@ export function Login() {
 
           {/* Form */}
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* Name Input (only for registration) */}
+            {/* Username Input (only for registration) */}
             {isRegistering && (
               <div>
-                <Label htmlFor="name" className="block text-sm font-medium text-foreground mb-1">Name</Label>
+                <Label htmlFor="username" className="block text-sm font-medium text-foreground mb-1">Username *</Label>
                 <Input
-                    id="name"
+                    id="username"
                     type="text"
-                    autoComplete="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your name"
+                    autoComplete="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Enter your username"
                   />
               </div>
             )}
 
-            {/* Email Input */}
-            <div>
-              <Label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">Email address</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email address"
-              />
-            </div>
+            {/* Email Input (optional for registration) */}
+            {isRegistering && (
+              <div>
+                <Label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">Email (optional)</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email address"
+                />
+              </div>
+            )}
+
+            {/* Username Input (for login) */}
+            {!isRegistering && (
+              <div>
+                <Label htmlFor="username" className="block text-sm font-medium text-foreground mb-1">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  autoComplete="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter your username"
+                />
+              </div>
+            )}
 
             {/* Password Input */}
             <div>
-              <Label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">Password</Label>
+              <Label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">Password *</Label>
               <Input
                 id="password"
                 type="password"
@@ -120,8 +165,9 @@ export function Login() {
               <Button
                 type="submit"
                 className="w-full"
+                disabled={loading}
               >
-                {isRegistering ? "Create Account" : "Sign In"}
+                {loading ? "Processing..." : (isRegistering ? "Create Account" : "Sign In")}
               </Button>
             </div>
 

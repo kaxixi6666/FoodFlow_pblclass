@@ -7,6 +7,9 @@ export const API_ENDPOINTS = {
   INGREDIENTS: `${API_BASE_URL}/ingredients`,
   RECIPES: `${API_BASE_URL}/recipes`,
   RECIPE_INGREDIENTS: `${API_BASE_URL}/recipe-ingredients`,
+  USERS_REGISTER: `${API_BASE_URL}/users/register`,
+  USERS_LOGIN: `${API_BASE_URL}/users/login`,
+  USERS: `${API_BASE_URL}/users`,
 };
 
 export const fetchAPI = async (endpoint: string, options?: RequestInit) => {

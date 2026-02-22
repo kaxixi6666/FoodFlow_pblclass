@@ -25,7 +25,9 @@ public class SecurityConfig {
             }))
             .authorizeRequests(authorize -> authorize
                 .requestMatchers("/api/inventory/**").permitAll()
-                .requestMatchers("/api/ingredients/recognition/**").permitAll()
+                .requestMatchers("/api/ingredients/**").permitAll()
+                .requestMatchers("/api/recipes/**").permitAll()
+                .requestMatchers("/api/users/**").permitAll()
                 .requestMatchers("/api/h2-console/**").permitAll()
                 .anyRequest().permitAll()
             )
