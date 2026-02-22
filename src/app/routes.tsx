@@ -15,6 +15,9 @@ const ProtectedDashboardLayout = () => (
   </ProtectedRoute>
 );
 
+// Determine basename based on environment
+const basename = import.meta.env.PROD ? "/" : "/FoodFlow";
+
 export const router = createBrowserRouter([
   {
     path: "/login",
@@ -32,5 +35,5 @@ export const router = createBrowserRouter([
     ],
   },
 ], {
-  basename: "/FoodFlow"
+  basename: basename
 });
