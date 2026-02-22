@@ -132,10 +132,17 @@ public class RecipeController {
     }
 
     @DeleteMapping("/{id}")
+    @Transactional
     public ResponseEntity<Void> deleteRecipe(@PathVariable Long id) {
         Recipe recipe = entityManager.find(Recipe.class, id);
         if (recipe == null) {
             return ResponseEntity.notFound().build();
+        }
+        
+        // Clear ingredients relationship to avoid foreign key constraint issues
+        if (recipe.getIngredients() != null) {
+            recipe.getIngredients().clear();
+            entityManager.merge(recipe);
         }
         
         entityManager.remove(recipe);
