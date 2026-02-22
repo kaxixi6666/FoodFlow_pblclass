@@ -51,15 +51,18 @@ public class InventoryController {
         if (!existingInventoryItems.isEmpty()) {
             // Merge with existing inventory item
             inventory = existingInventoryItems.get(0);
-            inventory.setQuantity(inventory.getQuantity() + request.getQuantity());
+            double quantityToAdd = request.getQuantity() != null ? request.getQuantity() : 1.0;
+            inventory.setQuantity(inventory.getQuantity() + quantityToAdd);
             inventory.setLastUpdated(LocalDateTime.now());
             entityManager.merge(inventory);
         } else {
             // Create new inventory item
             inventory = new Inventory();
             inventory.setIngredient(ingredient);
-            inventory.setQuantity(request.getQuantity());
-            inventory.setUnit(request.getUnit());
+            double quantity = request.getQuantity() != null ? request.getQuantity() : 1.0;
+            inventory.setQuantity(quantity);
+            String unit = request.getUnit() != null ? request.getUnit() : "piece";
+            inventory.setUnit(unit);
             inventory.setLastUpdated(LocalDateTime.now());
             inventory.setCreatedAt(LocalDateTime.now());
             entityManager.persist(inventory);
@@ -123,7 +126,7 @@ public class InventoryController {
         private String name;
         private String category;
         private String description;
-        private double quantity;
+        private Double quantity;
         private String unit;
 
         // Getters and setters
@@ -135,8 +138,8 @@ public class InventoryController {
         public void setCategory(String category) { this.category = category; }
         public String getDescription() { return description; }
         public void setDescription(String description) { this.description = description; }
-        public double getQuantity() { return quantity; }
-        public void setQuantity(double quantity) { this.quantity = quantity; }
+        public Double getQuantity() { return quantity; }
+        public void setQuantity(Double quantity) { this.quantity = quantity; }
         public String getUnit() { return unit; }
         public void setUnit(String unit) { this.unit = unit; }
     }
