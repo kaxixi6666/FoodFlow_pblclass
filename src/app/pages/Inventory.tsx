@@ -37,6 +37,9 @@ export function Inventory() {
         editing: false
       }));
         
+        // Sort by lastUpdated in descending order (newest first)
+        inventoryItems.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
+        
         setInventory(inventoryItems);
       } catch (error) {
         console.error('Error fetching inventory:', error);
