@@ -21,8 +21,38 @@ This is a Food Inventory Dashboard application built with React and Spring Boot.
 
 ## Running the Application
 
-### Frontend
-1. Navigate to the project root directory:
+### Option 1: Docker (Recommended)
+
+#### Quick Start with Docker Compose
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/kaxixi6666/FoodFlow_pblclass.git
+   cd FoodFlow_pblclass
+   ```
+
+2. Configure environment variables:
+   ```bash
+   cp .env.example .env
+   # Edit .env and add your OpenAI API key
+   ```
+
+3. Start all services:
+   ```bash
+   docker-compose up -d
+   ```
+
+4. Access the application:
+   - **Frontend**: http://localhost
+   - **Backend API**: http://localhost:8080/api
+   - **PostgreSQL**: localhost:5432
+
+For detailed Docker instructions, see [DOCKER.md](DOCKER.md).
+
+### Option 2: Local Development
+
+#### Frontend
+1. Navigate to project root directory:
    ```bash
    cd FoodFlow
    ```
@@ -32,30 +62,30 @@ This is a Food Inventory Dashboard application built with React and Spring Boot.
    npm install
    ```
 
-3. Start the development server:
+3. Start development server:
    ```bash
    npm run dev
    ```
 
-4. Access the frontend at:
+4. Access frontend at:
    ```
    http://localhost:5173/FoodFlow/
    ```
 
-### Backend
-1. Navigate to the backend directory:
+#### Backend
+1. Navigate to backend directory:
    ```bash
    cd FoodFlow/backend
    ```
 
 2. Ensure PostgreSQL is running and create a database named `foodflow`
 
-3. Start the backend server:
+3. Start backend server:
    ```bash
    mvn spring-boot:run
    ```
 
-4. Access the backend API at:
+4. Access backend API at:
    ```
    http://localhost:8080/api
    ```
