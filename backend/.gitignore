@@ -30,7 +30,7 @@ Thumbs.db
 .env.*.local
 
 # Spring Boot Configuration
-**/application.properties
+#**/application.properties
 **/application-*.properties
 
 # Logs
