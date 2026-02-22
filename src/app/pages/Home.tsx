@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Upload, Camera, Scan, Search, Check, X, Edit2, Plus, FileText, Image } from "lucide-react";
 import { toast } from "sonner";
+import { API_ENDPOINTS, fetchAPI } from "../config/api";
 
 interface DetectedIngredient {
   id: number;
@@ -158,38 +159,37 @@ export function Home() {
         const quantity = 1;
         const unit = "pcs";
         
+        // Get category from ingredient or default to "Uncategorized"
+        const category = 'category' in ingredient ? ingredient.category : "Uncategorized";
+        
         const inventoryRequest = {
           name: ingredient.name,
-          category: ingredient.category || "Uncategorized",
+          category: category,
           quantity: quantity,
           unit: unit
         };
         
-        const API_BASE = "https://foodflow-pblclass.onrender.com/api";
-        return fetch(`${API_BASE}/inventory`, {
+        return fetchAPI(API_ENDPOINTS.INVENTORY, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(inventoryRequest),
-        }).then(response => response.json());
+          body: JSON.stringify(inventoryRequest)
+        });
       });
       
       await Promise.all(addPromises);
       
       // Clear form after successful addition
-            setDetectedIngredients([]);
-            setManualIngredients([]);
-            setSelectedFiles([]);
-            setUploadMessage(`Successfully added ${ingredientsToAdd.length} items to inventory`);
-            
-            // Show success toast notification
-            toast.success(`Successfully added ${ingredientsToAdd.length} items to inventory`);
-            
-            // Navigate to Inventory page to show merged results
-            setTimeout(() => {
-              navigate('/inventory');
-            }, 1000);
+      setDetectedIngredients([]);
+      setManualIngredients([]);
+      setSelectedFiles([]);
+      setUploadMessage(`Successfully added ${ingredientsToAdd.length} items to inventory`);
+      
+      // Show success toast notification
+      toast.success(`Successfully added ${ingredientsToAdd.length} items to inventory`);
+      
+      // Navigate to Inventory page to show merged results
+      setTimeout(() => {
+        navigate('/inventory');
+      }, 1000);
       
     } catch (error) {
       console.error('Error adding to inventory:', error);
