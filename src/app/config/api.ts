@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://163.221.152.215:8080/api';
+export const API_BASE_URL = 'https://foodflow-pblclass.onrender.com/api';
 
 console.log('API_BASE_URL:', API_BASE_URL);
 
