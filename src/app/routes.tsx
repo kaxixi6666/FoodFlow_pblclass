@@ -15,9 +15,8 @@ const ProtectedDashboardLayout = () => (
   </ProtectedRoute>
 );
 
-// Determine basename based on environment
-const basename = import.meta.env.PROD ? "/FoodFlow_pblclass/" : "/FoodFlow/";
-
+// HashRouter doesn't need basename for GitHub Pages deployment
+// The hash part (#/) handles routing independently of the base path
 export const router = createHashRouter([
   {
     path: "/login",
@@ -34,6 +33,4 @@ export const router = createHashRouter([
       { path: "planning", Component: Planning },
     ],
   },
-], {
-  basename: basename
-});
+]);
