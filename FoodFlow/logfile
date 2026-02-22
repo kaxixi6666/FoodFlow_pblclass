@@ -1,7 +1,0 @@
-2026-02-20 20:57:26.428 JST [68657] LOG:  starting PostgreSQL 14.21 (Homebrew) on aarch64-apple-darwin24.6.0, compiled by Apple clang version 17.0.0 (clang-1700.6.3.2), 64-bit
-2026-02-20 20:57:26.430 JST [68657] LOG:  listening on IPv6 address "::1", port 5432
-2026-02-20 20:57:26.430 JST [68657] LOG:  listening on IPv4 address "127.0.0.1", port 5432
-2026-02-20 20:57:26.430 JST [68657] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
-2026-02-20 20:57:26.432 JST [68658] LOG:  database system was shut down at 2026-02-20 20:57:12 JST
-2026-02-20 20:57:26.434 JST [68657] LOG:  database system is ready to accept connections
-2026-02-20 20:57:34.725 JST [68888] FATAL:  database "kaxixi" does not exist
