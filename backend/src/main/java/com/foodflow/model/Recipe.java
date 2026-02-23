@@ -37,7 +37,7 @@ public class Recipe {
     private LocalDateTime updatedAt;
 
     // Many-to-many relationship with Ingredient
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinTable(
         name = "recipe_ingredients",
         joinColumns = @JoinColumn(name = "recipe_id"),

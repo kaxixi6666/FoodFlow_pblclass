@@ -1,5 +1,6 @@
 import { Search, Plus, Clock, Users, ChefHat, ChevronDown, ChevronUp, MoreVertical, PlusCircle, X, Clock3, Users2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
@@ -31,6 +32,7 @@ const availableIngredients = [
 ];
 
 export function Recipes() {
+  const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
   const [recipeName, setRecipeName] = useState("");
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
@@ -863,7 +865,13 @@ export function Recipes() {
                     </div>
 
                     <div className="mt-6">
-                      <button className="w-full py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate('/planning', { state: { recipeToAdd: recipe } });
+                        }}
+                        className="w-full py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+                      >
                         <PlusCircle className="w-4 h-4" />
                         Add to Plan
                       </button>
