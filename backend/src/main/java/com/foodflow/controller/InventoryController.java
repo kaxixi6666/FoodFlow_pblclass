@@ -25,42 +25,20 @@ public class InventoryController {
     @PostMapping
     @Transactional
     public ResponseEntity<Inventory> addToInventory(@RequestBody InventoryRequest request) {
-        // Create or get ingredient
-        List<Ingredient> existingIngredients = entityManager.createQuery(
-            "SELECT i FROM Ingredient i WHERE i.name = :name", Ingredient.class
-        ).setParameter("name", request.getName()).getResultList();
+        // Always create a new ingredient record (no duplicate checking)
+        Ingredient ingredient = new Ingredient();
+        ingredient.setName(request.getName());
+        ingredient.setCategory(request.getCategory());
+        ingredient.setDescription(request.getDescription());
+        entityManager.persist(ingredient);
 
-        Ingredient ingredient;
-        if (!existingIngredients.isEmpty()) {
-            ingredient = existingIngredients.get(0);
-        } else {
-            ingredient = new Ingredient();
-            ingredient.setName(request.getName());
-            ingredient.setCategory(request.getCategory());
-            ingredient.setDescription(request.getDescription());
-            entityManager.persist(ingredient);
-        }
-
-        // Check if inventory item with same ingredient already exists
-        List<Inventory> existingInventoryItems = entityManager.createQuery(
-            "SELECT i FROM Inventory i WHERE i.ingredient.id = :ingredientId", Inventory.class
-        ).setParameter("ingredientId", ingredient.getId())
-         .getResultList();
-
-        Inventory inventory;
-        if (!existingInventoryItems.isEmpty()) {
-            // Update existing inventory item
-            inventory = existingInventoryItems.get(0);
-            inventory.setLastUpdated(LocalDateTime.now());
-            entityManager.merge(inventory);
-        } else {
-            // Create new inventory item
-            inventory = new Inventory();
-            inventory.setIngredient(ingredient);
-            inventory.setLastUpdated(LocalDateTime.now());
-            inventory.setCreatedAt(LocalDateTime.now());
-            entityManager.persist(inventory);
-        }
+        // Always create a new inventory record (no duplicate checking)
+        // Each item has a different creation time and should be preserved separately
+        Inventory inventory = new Inventory();
+        inventory.setIngredient(ingredient);
+        inventory.setLastUpdated(LocalDateTime.now());
+        inventory.setCreatedAt(LocalDateTime.now());
+        entityManager.persist(inventory);
 
         return ResponseEntity.ok(inventory);
     }
