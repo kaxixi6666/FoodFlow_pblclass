@@ -13,7 +13,9 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/inventory")
@@ -32,13 +34,19 @@ public class InventoryController {
             // Validate userId
             if (userId == null) {
                 System.err.println("Error: X-User-Id header is missing");
-                return ResponseEntity.badRequest().build();
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "X-User-Id header is required");
+                error.put("code", 400);
+                return ResponseEntity.badRequest().body(error);
             }
 
             // Validate request
             if (request.getName() == null || request.getName().trim().isEmpty()) {
                 System.err.println("Error: Ingredient name is required");
-                return ResponseEntity.badRequest().build();
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Ingredient name is required");
+                error.put("code", 400);
+                return ResponseEntity.badRequest().body(error);
             }
 
             System.out.println("Adding to inventory - userId: " + userId + ", name: " + request.getName());
@@ -67,16 +75,23 @@ public class InventoryController {
         } catch (Exception e) {
             System.err.println("Error adding to inventory: " + e.getMessage());
             e.printStackTrace();
-            throw new RuntimeException("Failed to add to inventory: " + e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Failed to add to inventory: " + e.getMessage());
+            error.put("code", 500);
+            return ResponseEntity.status(500).body(error);
         }
     }
 
     @GetMapping
     public ResponseEntity<List<InventoryResponse>> getInventory(@RequestHeader(value = "X-User-Id", required = false) Long userId) {
         try {
+            // Validate userId
             if (userId == null) {
                 System.err.println("Error: X-User-Id header is missing");
-                return ResponseEntity.badRequest().build();
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "X-User-Id header is required");
+                error.put("code", 400);
+                return ResponseEntity.badRequest().body(error);
             }
 
             List<Inventory> inventories = entityManager.createQuery(
@@ -102,7 +117,10 @@ public class InventoryController {
         } catch (Exception e) {
             System.err.println("Error getting inventory: " + e.getMessage());
             e.printStackTrace();
-            throw new RuntimeException("Failed to get inventory: " + e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Failed to get inventory: " + e.getMessage());
+            error.put("code", 500);
+            return ResponseEntity.status(500).body(error);
         }
     }
 
@@ -114,9 +132,13 @@ public class InventoryController {
         @RequestHeader(value = "X-User-Id", required = false) Long userId
     ) {
         try {
+            // Validate userId
             if (userId == null) {
                 System.err.println("Error: X-User-Id header is missing");
-                return ResponseEntity.badRequest().build();
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "X-User-Id header is required");
+                error.put("code", 400);
+                return ResponseEntity.badRequest().body(error);
             }
 
             Inventory inventory = entityManager.createQuery(
@@ -130,6 +152,9 @@ public class InventoryController {
 
             if (inventory == null) {
                 System.err.println("Inventory not found with ID: " + id + " for user: " + userId);
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Inventory not found");
+                error.put("code", 404);
                 return ResponseEntity.notFound().build();
             }
 
@@ -140,7 +165,10 @@ public class InventoryController {
         } catch (Exception e) {
             System.err.println("Error updating inventory: " + e.getMessage());
             e.printStackTrace();
-            throw new RuntimeException("Failed to update inventory: " + e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Failed to update inventory: " + e.getMessage());
+            error.put("code", 500);
+            return ResponseEntity.status(500).body(error);
         }
     }
 
@@ -151,9 +179,13 @@ public class InventoryController {
         @RequestHeader(value = "X-User-Id", required = false) Long userId
     ) {
         try {
+            // Validate userId
             if (userId == null) {
                 System.err.println("Error: X-User-Id header is missing");
-                return ResponseEntity.badRequest().build();
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "X-User-Id header is required");
+                error.put("code", 400);
+                return ResponseEntity.badRequest().body(error);
             }
 
             Inventory inventory = entityManager.createQuery(
@@ -173,7 +205,10 @@ public class InventoryController {
         } catch (Exception e) {
             System.err.println("Error deleting inventory: " + e.getMessage());
             e.printStackTrace();
-            throw new RuntimeException("Failed to delete inventory: " + e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Failed to delete inventory: " + e.getMessage());
+            error.put("code", 500);
+            return ResponseEntity.status(500).body(error);
         }
     }
 
