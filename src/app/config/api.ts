@@ -85,18 +85,41 @@ export const uploadReceiptImageNew = async (file: File): Promise<any> => {
   
   console.log('uploadReceiptImageNew - sending request to:', NEW_DETECT_API_URL);
   
-  const response = await fetch(NEW_DETECT_API_URL, {
-    method: 'POST',
-    headers,
-    body: formData,
-  });
+  let response;
+  try {
+    // Try new HTTPS API first
+    response = await fetch(NEW_DETECT_API_URL, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    console.log('uploadReceiptImageNew - new API response status:', response.status);
+    console.log('uploadReceiptImageNew - new API response ok:', response.ok);
+  } catch (error) {
+    console.log('uploadReceiptImageNew - New HTTPS API failed, trying fallback to old API');
+    console.log('uploadReceiptImageNew - fallback error:', error);
+    
+    // If new API fails, try old API as fallback
+    try {
+      response = await fetch(API_ENDPOINTS.DETECT_INVENTORY, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+      console.log('uploadReceiptImageNew - fallback API response status:', response.status);
+      console.log('uploadReceiptImageNew - fallback API response ok:', response.ok);
+    } catch (fallbackError) {
+      console.log('uploadReceiptImageNew - Fallback API also failed:', fallbackError);
+      throw new Error('All receipt detection APIs failed');
+    }
+  }
 
-  console.log('uploadReceiptImageNew - response status:', response.status);
-  console.log('uploadReceiptImageNew - response ok:', response.ok);
+  console.log('uploadReceiptImageNew - final response status:', response.status);
+  console.log('uploadReceiptImageNew - final response ok:', response.ok);
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`New Detect API Error: ${response.status} - ${errorText}`);
+    console.error(`Detect API Error: ${response.status} - ${errorText}`);
     throw new Error(`Receipt detection failed: ${response.status}`);
   }
 
