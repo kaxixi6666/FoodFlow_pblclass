@@ -1,5 +1,5 @@
-export const API_BASE_URL = 'https://foodflow-pblclass.onrender.com/api';
-export const DETECT_API_BASE_URL = 'https://163.221.152.191:8080';
+export const API_BASE_URL = 'https://pbl.florentin.online/api';
+export const DETECT_API_BASE_URL = 'https://pbl.florentin.online';
 
 console.log('API_BASE_URL:', API_BASE_URL);
 console.log('DETECT_API_BASE_URL:', DETECT_API_BASE_URL);
