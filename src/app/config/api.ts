@@ -1,5 +1,5 @@
 export const API_BASE_URL = 'https://foodflow-pblclass.onrender.com/api';
-export const DETECT_API_BASE_URL = 'http://163.221.152.191:8080';
+export const DETECT_API_BASE_URL = 'https://163.221.152.191:8080';
 
 console.log('API_BASE_URL:', API_BASE_URL);
 console.log('DETECT_API_BASE_URL:', DETECT_API_BASE_URL);
@@ -83,11 +83,26 @@ export const uploadReceiptImage = async (file: File): Promise<any> => {
   
   console.log('uploadReceiptImage - sending request to:', API_ENDPOINTS.DETECT_INVENTORY);
   
-  const response = await fetch(API_ENDPOINTS.DETECT_INVENTORY, {
-    method: 'POST',
-    headers,
-    body: formData,
-  });
+  let response;
+  try {
+    // Try HTTPS first
+    response = await fetch(API_ENDPOINTS.DETECT_INVENTORY, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+  } catch (error) {
+    console.log('uploadReceiptImage - HTTPS request failed, trying HTTP fallback');
+    // If HTTPS fails, try HTTP as fallback
+    const httpUrl = API_ENDPOINTS.DETECT_INVENTORY.replace('https://', 'http://');
+    console.log('uploadReceiptImage - fallback URL:', httpUrl);
+    
+    response = await fetch(httpUrl, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+  }
 
   console.log('uploadReceiptImage - response status:', response.status);
   console.log('uploadReceiptImage - response ok:', response.ok);
