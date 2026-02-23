@@ -10,11 +10,12 @@ Home页面现在支持扫描收据图片并自动识别食材功能。用户可�
 
 ## 接口信息
 
-### 1. 收据识别接口
-- **接口地址**: `POST http://163.221.152.191:8080/api/inventory/detect`
+### 1. 收据识别接口（新 - 用于Analyze Files按钮）
+- **接口地址**: `POST https://pbl.florentin.online/api/inventory/detect`
+- **API文档**: `https://pbl.florentin.online/swagger-ui/index.html#/detect-food-controller`
 - **请求格式**: multipart/form-data
 - **必填参数**: 
-  - `image`: 上传的收据图片文件（类型为 string($binary)）
+  - `image`: 上传的收据图片文件（类型为二进制文件）
 - **成功响应** (200 OK):
   ```json
   {
@@ -49,7 +50,7 @@ Home页面现在支持扫描收据图片并自动识别食材功能。用户可�
 
 ### 前置条件
 1. 确保用户已登录（localStorage中有user对象）
-2. 确保detect API服务正常运行（http://163.221.152.191:8080）
+2. 确保新detect API服务正常运行（https://pbl.florentin.online）
 3. 确保前端开发服务器正在运行
 
 ### 测试场景1: 上传JPG图片识别食材
@@ -65,19 +66,19 @@ Home页面现在支持扫描收据图片并自动识别食材功能。用户可�
 #### 预期结果:
 - ✅ 图片成功上传
 - ✅ 显示"Analyzing files..."提示
-- ✅ 调用detect API: `POST http://163.221.152.191:8080/api/inventory/detect`
+- ✅ 调用新detect API: `POST https://pbl.florentin.online/api/inventory/detect`
 - ✅ 识别结果展示在"Detected Ingredients"表格中
 - ✅ 每个食材显示名称和状态（Matched）
 - ✅ 显示成功提示："Successfully detected X ingredients"
 
 #### 控制台日志:
 ```
-uploadReceiptImage - userId: 1
-uploadReceiptImage - file: receipt.jpg image/jpeg
-uploadReceiptImage - Adding X-User-Id header: 1
-uploadReceiptImage - sending request to: http://163.221.152.191:8080/api/inventory/detect
-uploadReceiptImage - response status: 200
-uploadReceiptImage - response ok: true
+uploadReceiptImageNew - userId: 1
+uploadReceiptImageNew - file: receipt.jpg image/jpeg
+uploadReceiptImageNew - Adding X-User-Id header: 1
+uploadReceiptImageNew - sending request to: https://pbl.florentin.online/api/inventory/detect
+uploadReceiptImageNew - response status: 200
+uploadReceiptImageNew - response ok: true
 Detected ingredients response: {detectedItems: [...]}
 ```
 
@@ -218,7 +219,7 @@ fetchAPI - response ok: true
 
 #### 测试1: 上传收据图片
 ```bash
-curl -X POST http://163.221.152.191:8080/api/inventory/detect \
+curl -X POST https://pbl.florentin.online/api/inventory/detect \
   -H "X-User-Id: 1" \
   -F "image=@/path/to/receipt.jpg"
 ```
@@ -246,7 +247,7 @@ curl -X POST http://163.221.152.191:8080/api/inventory/detect \
 #### 请求配置:
 ```
 Method: POST
-URL: http://163.221.152.191:8080/api/inventory/detect
+URL: https://pbl.florentin.online/api/inventory/detect
 Headers:
   X-User-Id: 1
 Body (form-data):
@@ -349,7 +350,7 @@ A: 请检查：
 ### Q2: 如何确认detect API是否正常工作？
 A: 使用Curl或Postman测试接口：
 ```bash
-curl -X POST http://163.221.152.191:8080/api/inventory/detect \
+curl -X POST https://pbl.florentin.online/api/inventory/detect \
   -H "X-User-Id: 1" \
   -F "image=@/path/to/receipt.jpg"
 ```
@@ -370,10 +371,15 @@ A: 可以。点击"Confirm & Add to Inventory"按钮时，会将识别的食材�
 收据扫描功能已成功实现，包括：
 - ✅ 文件上传和拖拽功能
 - ✅ 文件类型验证（JPG/PNG）
-- ✅ 收据识别接口集成
+- ✅ 新收据识别接口集成（https://pbl.florentin.online）
 - ✅ 识别结果展示
-- ✅ 批量添加到库存
+- ✅ 批量添加到库存（使用原有库存API）
 - ✅ 错误处理和友好提示
 - ✅ 用户数据隔离
+
+**重要说明**：
+- "Analyze Files"按钮现在使用新的HTTPS接口：`https://pbl.florentin.online/api/inventory/detect`
+- 其他所有API调用（新增库存、查询库存等）继续使用原有接口地址和逻辑
+- 确保接口调用隔离，互不影响
 
 用户现在可以通过上传收据图片快速识别食材，并批量添加到库存中，大大提升了用户体验。

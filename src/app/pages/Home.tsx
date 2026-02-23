@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Upload, Camera, Scan, Search, Check, X, Edit2, Plus, FileText, Image } from "lucide-react";
 import { toast } from "sonner";
-import { API_ENDPOINTS, fetchAPI, uploadReceiptImage } from "../config/api";
+import { API_ENDPOINTS, fetchAPI, uploadReceiptImage, uploadReceiptImageNew } from "../config/api";
 
 interface DetectedIngredient {
   id: number;
@@ -112,9 +112,9 @@ export function Home() {
     setUploadMessage("Analyzing files...");
     
     try {
-      // Call the real API to detect ingredients from receipt image
+      // Call the new HTTPS API to detect ingredients from receipt image
       const file = selectedFiles[0];
-      const response = await uploadReceiptImage(file);
+      const response = await uploadReceiptImageNew(file);
       
       console.log('Detected ingredients response:', response);
       

@@ -1,88 +1,93 @@
-# FoodFlow API 接口文档
+# FoodFlow API Documentation
 
-## 目录
+## Table of Contents
 
-1. [概述](#概述)
-2. [基础信息](#基础信息)
-3. [用户相关接口](#用户相关接口)
-4. [库存相关接口](#库存相关接口)
-5. [食谱相关接口](#食谱相关接口)
-6. [餐食计划相关接口](#餐食计划相关接口)
-7. [收据识别接口](#收据识别接口)
-8. [错误处理](#错误处理)
-9. [数据隔离](#数据隔离)
-
----
-
-## 概述
-
-FoodFlow API 是一个基于 RESTful 架构的后端服务，提供用户管理、库存管理、食谱管理、餐食计划管理等功能。所有接口均支持数据隔离，确保每个用户只能访问自己的数据。
-
-### 技术栈
-
-- **后端框架**: Spring Boot
-- **数据库**: PostgreSQL
-- **API协议**: HTTP/HTTPS
-- **数据格式**: JSON
-- **认证方式**: Header-based (X-User-Id)
+1. [Overview](#overview)
+2. [Base Information](#base-information)
+3. [User APIs](#user-apis)
+4. [Inventory APIs](#inventory-apis)
+5. [Recipe APIs](#recipe-apis)
+6. [Meal Plan APIs](#meal-plan-apis)
+7. [Receipt Detection API](#receipt-detection-api)
+8. [Error Handling](#error-handling)
+9. [Data Isolation](#data-isolation)
 
 ---
 
-## 基础信息
+## Overview
 
-### API Base URL
+FoodFlow API is a RESTful backend service providing user management, inventory management, recipe management, meal plan management, and more. All APIs support data isolation to ensure each user can only access their own data.
 
-#### 生产环境
+### Technology Stack
+
+- **Backend Framework**: Spring Boot
+- **Database**: PostgreSQL
+- **API Protocol**: HTTP/HTTPS
+- **Data Format**: JSON
+- **Authentication Method**: Header-based (X-User-Id)
+
+---
+
+## Base Information
+
+### API Base URLs
+
+#### Production Environment
 ```
 https://foodflow-pblclass.onrender.com/api
 ```
 
-#### 本地开发环境
+#### Local Development Environment
 ```
 http://localhost:8080/api
 ```
 
-#### 收据识别API
+#### Receipt Detection API
 ```
 https://163.221.152.191:8080/api/inventory/detect
 ```
 
-### 通用请求头
+#### New Receipt Detection API (for Analyze Files button)
+```
+https://pbl.florentin.online/api/inventory/detect
+```
 
-| Header名称 | 类型 | 必填 | 说明 |
-|-----------|------|--------|------|
-| Content-Type | String | 是 | application/json 或 multipart/form-data |
-| X-User-Id | Long | 是 | 当前登录用户的ID |
+### Common Request Headers
 
-### 通用响应格式
+| Header Name | Type | Required | Description |
+|-------------|------|-----------|
+| Content-Type | String | Yes | application/json or multipart/form-data |
+| X-User-Id | Long | Yes | Current logged-in user ID |
 
-#### 成功响应
+### Common Response Format
+
+#### Success Response
 ```json
 {
   "success": true,
-  "message": "操作成功",
+  "message": "Operation successful",
   "data": { ... }
 }
 ```
 
-#### 错误响应
+#### Error Response
 ```json
 {
   "success": false,
-  "message": "错误信息",
+  "message": "Error message",
   "code": 400
 }
 ```
 
 ---
 
-## 用户相关接口
+## User APIs
 
-### 1. 用户注册
+### 1. User Registration
 
-**接口地址**: `POST /users/register`
+**Endpoint**: `POST /users/register`
 
-**请求参数**:
+**Request Body**:
 ```json
 {
   "username": "testuser",
@@ -91,10 +96,10 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**请求头**:
+**Request Headers**:
 - Content-Type: application/json
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 {
   "success": true,
@@ -108,7 +113,7 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**错误响应** (400 Bad Request):
+**Error Response** (400 Bad Request):
 ```json
 {
   "success": false,
@@ -116,19 +121,19 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**错误场景**:
-- Username is required: 用户名为空
-- Password is required: 密码为空
-- Username already exists: 用户名已存在
-- Registration failed: 注册失败
+**Error Scenarios**:
+- Username is required: Username is empty
+- Password is required: Password is empty
+- Username already exists: Username already taken
+- Registration failed: Registration failed
 
 ---
 
-### 2. 用户登录
+### 2. User Login
 
-**接口地址**: `POST /users/login`
+**Endpoint**: `POST /users/login`
 
-**请求参数**:
+**Request Body**:
 ```json
 {
   "username": "testuser",
@@ -136,10 +141,10 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**请求头**:
+**Request Headers**:
 - Content-Type: application/json
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 {
   "success": true,
@@ -153,7 +158,7 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**错误响应** (400 Bad Request):
+**Error Response** (400 Bad Request):
 ```json
 {
   "success": false,
@@ -161,7 +166,7 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-或
+Or
 ```json
 {
   "success": false,
@@ -169,20 +174,20 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**错误场景**:
-- User not found: 用户不存在
-- Invalid password: 密码错误
+**Error Scenarios**:
+- User not found: User does not exist
+- Invalid password: Password is incorrect
 
 ---
 
-### 3. 获取所有用户
+### 3. Get All Users
 
-**接口地址**: `GET /users`
+**Endpoint**: `GET /users`
 
-**请求头**:
-- 无特殊要求
+**Request Headers**:
+- No special requirements
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 [
   {
@@ -202,14 +207,14 @@ https://163.221.152.191:8080/api/inventory/detect
 
 ---
 
-### 4. 获取用户详情
+### 4. Get User Details
 
-**接口地址**: `GET /users/{id}`
+**Endpoint**: `GET /users/{id}`
 
-**路径参数**:
-- id: 用户ID
+**Path Parameters**:
+- id: User ID
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 {
   "id": 1,
@@ -219,7 +224,7 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**错误响应** (404 Not Found):
+**Error Response** (404 Not Found):
 ```json
 {
   "success": false,
@@ -229,13 +234,13 @@ https://163.221.152.191:8080/api/inventory/detect
 
 ---
 
-## 库存相关接口
+## Inventory APIs
 
-### 1. 添加食材到库存
+### 1. Add Ingredient to Inventory
 
-**接口地址**: `POST /inventory`
+**Endpoint**: `POST /inventory`
 
-**请求参数**:
+**Request Body**:
 ```json
 {
   "name": "Tomatoes",
@@ -244,11 +249,11 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**请求头**:
+**Request Headers**:
 - Content-Type: application/json
-- X-User-Id: 1 (必填)
+- X-User-Id: 1 (Required)
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 {
   "id": 123,
@@ -264,7 +269,7 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**错误响应** (400 Bad Request):
+**Error Response** (400 Bad Request):
 ```json
 {
   "error": "X-User-Id header is required",
@@ -272,7 +277,7 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-或
+Or
 ```json
 {
   "error": "Ingredient name is required",
@@ -280,7 +285,7 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**错误响应** (500 Internal Server Error):
+**Error Response** (500 Internal Server Error):
 ```json
 {
   "error": "Failed to add to inventory: ...",
@@ -288,21 +293,21 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**错误场景**:
-- X-User-Id header is required: 未提供用户ID
-- Ingredient name is required: 食材名称为空
-- Failed to add to inventory: 添加失败（数据库错误等）
+**Error Scenarios**:
+- X-User-Id header is required: User ID not provided
+- Ingredient name is required: Ingredient name is empty
+- Failed to add to inventory: Add failed (database error, etc.)
 
 ---
 
-### 2. 获取库存列表
+### 2. Get Inventory List
 
-**接口地址**: `GET /inventory`
+**Endpoint**: `GET /inventory`
 
-**请求头**:
-- X-User-Id: 1 (必填)
+**Request Headers**:
+- X-User-Id: 1 (Required)
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 [
   {
@@ -320,7 +325,7 @@ https://163.221.152.191:8080/api/inventory/detect
 ]
 ```
 
-**错误响应** (400 Bad Request):
+**Error Response** (400 Bad Request):
 ```json
 {
   "error": "X-User-Id header is required",
@@ -328,7 +333,7 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**错误响应** (500 Internal Server Error):
+**Error Response** (500 Internal Server Error):
 ```json
 {
   "error": "Failed to get inventory: ...",
@@ -336,32 +341,32 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**说明**:
-- 只返回当前用户的库存数据
-- 按ID升序排列
-- lastUpdated格式为东京时间：yyyy-MM-dd HH:mm:ss
+**Notes**:
+- Returns only current user's inventory data
+- Sorted by ID in ascending order
+- lastUpdated format is Tokyo time: yyyy-MM-dd HH:mm:ss
 
 ---
 
-### 3. 更新库存项
+### 3. Update Inventory Item
 
-**接口地址**: `PUT /inventory/{id}`
+**Endpoint**: `PUT /inventory/{id}`
 
-**路径参数**:
-- id: 库存项ID
+**Path Parameters**:
+- id: Inventory item ID
 
-**请求参数**:
+**Request Body**:
 ```json
 {
-  // 当前为空，保留用于未来扩展
+  // Currently empty, reserved for future extension
 }
 ```
 
-**请求头**:
+**Request Headers**:
 - Content-Type: application/json
-- X-User-Id: 1 (必填)
+- X-User-Id: 1 (Required)
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 {
   "id": 123,
@@ -376,7 +381,7 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**错误响应** (400 Bad Request):
+**Error Response** (400 Bad Request):
 ```json
 {
   "error": "X-User-Id header is required",
@@ -384,7 +389,7 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**错误响应** (404 Not Found):
+**Error Response** (404 Not Found):
 ```json
 {
   "error": "Inventory not found",
@@ -392,7 +397,7 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**错误响应** (500 Internal Server Error):
+**Error Response** (500 Internal Server Error):
 ```json
 {
   "error": "Failed to update inventory: ...",
@@ -400,26 +405,26 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**说明**:
-- 只能更新当前用户的库存项
-- 自动更新lastUpdated时间
+**Notes**:
+- Can only update current user's inventory items
+- Automatically updates lastUpdated timestamp
 
 ---
 
-### 4. 删除库存项
+### 4. Delete Inventory Item
 
-**接口地址**: `DELETE /inventory/{id}`
+**Endpoint**: `DELETE /inventory/{id}`
 
-**路径参数**:
-- id: 库存项ID
+**Path Parameters**:
+- id: Inventory item ID
 
-**请求头**:
-- X-User-Id: 1 (必填)
+**Request Headers**:
+- X-User-Id: 1 (Required)
 
-**成功响应** (204 No Content):
-- 无响应体
+**Success Response** (204 No Content):
+- No response body
 
-**错误响应** (400 Bad Request):
+**Error Response** (400 Bad Request):
 ```json
 {
   "error": "X-User-Id header is required",
@@ -427,7 +432,7 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**错误响应** (500 Internal Server Error):
+**Error Response** (500 Internal Server Error):
 ```json
 {
   "error": "Failed to delete inventory: ...",
@@ -435,22 +440,22 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**说明**:
-- 只能删除当前用户的库存项
-- 如果库存项不存在，也返回204（幂等操作）
+**Notes**:
+- Can only delete current user's inventory items
+- Returns 204 even if inventory item doesn't exist (idempotent operation)
 
 ---
 
-## 食谱相关接口
+## Recipe APIs
 
-### 1. 获取所有食谱
+### 1. Get All Recipes
 
-**接口地址**: `GET /recipes`
+**Endpoint**: `GET /recipes`
 
-**请求头**:
-- X-User-Id: 1 (必填)
+**Request Headers**:
+- X-User-Id: 1 (Required)
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 [
   {
@@ -476,23 +481,23 @@ https://163.221.152.191:8080/api/inventory/detect
 ]
 ```
 
-**错误响应** (400 Bad Request):
-- 无响应体
+**Error Response** (400 Bad Request):
+- No response body
 
-**说明**:
-- 只返回当前用户的食谱
-- 按ID升序排列
+**Notes**:
+- Returns only current user's recipes
+- Sorted by ID in ascending order
 
 ---
 
-### 2. 获取公开食谱
+### 2. Get Public Recipes
 
-**接口地址**: `GET /recipes/public`
+**Endpoint**: `GET /recipes/public`
 
-**请求头**:
-- 无特殊要求
+**Request Headers**:
+- No special requirements
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 [
   {
@@ -518,23 +523,23 @@ https://163.221.152.191:8080/api/inventory/detect
 ]
 ```
 
-**说明**:
-- 返回所有用户的公开食谱
-- 按ID升序排列
+**Notes**:
+- Returns all users' public recipes
+- Sorted by ID in ascending order
 
 ---
 
-### 3. 按状态获取食谱
+### 3. Get Recipes by Status
 
-**接口地址**: `GET /recipes/status/{status}`
+**Endpoint**: `GET /recipes/status/{status}`
 
-**路径参数**:
-- status: 食谱状态 (draft, published, etc.)
+**Path Parameters**:
+- status: Recipe status (draft, published, etc.)
 
-**请求头**:
-- X-User-Id: 1 (必填)
+**Request Headers**:
+- X-User-Id: 1 (Required)
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 [
   {
@@ -547,20 +552,20 @@ https://163.221.152.191:8080/api/inventory/detect
 ]
 ```
 
-**错误响应** (400 Bad Request):
-- 无响应体
+**Error Response** (400 Bad Request):
+- No response body
 
-**说明**:
-- 只返回当前用户的食谱
-- 按状态过滤
+**Notes**:
+- Returns only current user's recipes
+- Filtered by status
 
 ---
 
-### 4. 创建食谱
+### 4. Create Recipe
 
-**接口地址**: `POST /recipes`
+**Endpoint**: `POST /recipes`
 
-**请求参数**:
+**Request Body**:
 ```json
 {
   "name": "Tomato Soup",
@@ -580,11 +585,11 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**请求头**:
+**Request Headers**:
 - Content-Type: application/json
-- X-User-Id: 1 (必填)
+- X-User-Id: 1 (Required)
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 {
   "id": 1,
@@ -608,24 +613,24 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**错误响应** (400 Bad Request):
-- 无响应体
+**Error Response** (400 Bad Request):
+- No response body
 
-**说明**:
-- 自动设置userId为当前用户
-- 如果isPublic为null，默认为false
-- 自动处理ingredients（创建或关联已有食材）
+**Notes**:
+- Automatically sets userId to current user
+- If isPublic is null, defaults to false
+- Automatically processes ingredients (creates or links existing ingredients)
 
 ---
 
-### 5. 更新食谱
+### 5. Update Recipe
 
-**接口地址**: `PUT /recipes/{id}`
+**Endpoint**: `PUT /recipes/{id}`
 
-**路径参数**:
-- id: 食谱ID
+**Path Parameters**:
+- id: Recipe ID
 
-**请求参数**:
+**Request Body**:
 ```json
 {
   "name": "Tomato Soup Updated",
@@ -645,11 +650,11 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**请求头**:
+**Request Headers**:
 - Content-Type: application/json
-- X-User-Id: 1 (必填)
+- X-User-Id: 1 (Required)
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 {
   "id": 1,
@@ -667,64 +672,64 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**错误响应** (404 Not Found):
-- 无响应体
+**Error Response** (404 Not Found):
+- No response body
 
-**说明**:
-- 只能更新当前用户的食谱
-- 自动更新updatedAt时间
-
----
-
-### 6. 删除食谱
-
-**接口地址**: `DELETE /recipes/{id}`
-
-**路径参数**:
-- id: 食谱ID
-
-**请求头**:
-- X-User-Id: 1 (必填)
-
-**成功响应** (204 No Content):
-- 无响应体
-
-**错误响应** (400 Bad Request):
-- 无响应体
-
-**说明**:
-- 只能删除当前用户的食谱
+**Notes**:
+- Can only update current user's recipes
+- Automatically updates updatedAt timestamp
 
 ---
 
-### 7. 生成随机食谱
+### 6. Delete Recipe
 
-**接口地址**: `POST /recipes/generate`
+**Endpoint**: `DELETE /recipes/{id}`
 
-**查询参数**:
-- count: 生成的食谱数量（默认10）
+**Path Parameters**:
+- id: Recipe ID
 
-**成功响应** (200 OK):
+**Request Headers**:
+- X-User-Id: 1 (Required)
+
+**Success Response** (204 No Content):
+- No response body
+
+**Error Response** (400 Bad Request):
+- No response body
+
+**Notes**:
+- Can only delete current user's recipes
+
+---
+
+### 7. Generate Random Recipes
+
+**Endpoint**: `POST /recipes/generate`
+
+**Query Parameters**:
+- count: Number of recipes to generate (default 10)
+
+**Success Response** (200 OK):
 ```json
 "Generated 10 random recipes"
 ```
 
-**说明**:
-- 用于测试和开发
-- 生成随机食谱数据
+**Notes**:
+- Used for testing and development
+- Generates random recipe data
 
 ---
 
-## 餐食计划相关接口
+## Meal Plan APIs
 
-### 1. 获取所有餐食计划
+### 1. Get All Meal Plans
 
-**接口地址**: `GET /meal-plans`
+**Endpoint**: `GET /meal-plans`
 
-**请求头**:
-- 无特殊要求
+**Request Headers**:
+- No special requirements
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 [
   {
@@ -740,15 +745,15 @@ https://163.221.152.191:8080/api/inventory/detect
 
 ---
 
-### 2. 按周获取餐食计划
+### 2. Get Meal Plans by Week
 
-**接口地址**: `GET /meal-plans/week`
+**Endpoint**: `GET /meal-plans/week`
 
-**查询参数**:
-- startDate: 开始日期 (yyyy-MM-dd)
-- endDate: 结束日期 (yyyy-MM-dd)
+**Query Parameters**:
+- startDate: Start date (yyyy-MM-dd)
+- endDate: End date (yyyy-MM-dd)
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 [
   {
@@ -764,14 +769,14 @@ https://163.221.152.191:8080/api/inventory/detect
 
 ---
 
-### 3. 按日期获取餐食计划
+### 3. Get Meal Plans by Date
 
-**接口地址**: `GET /meal-plans/date/{date}`
+**Endpoint**: `GET /meal-plans/date/{date}`
 
-**路径参数**:
-- date: 日期 (yyyy-MM-dd)
+**Path Parameters**:
+- date: Date (yyyy-MM-dd)
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 [
   {
@@ -787,11 +792,11 @@ https://163.221.152.191:8080/api/inventory/detect
 
 ---
 
-### 4. 创建餐食计划
+### 4. Create Meal Plan
 
-**接口地址**: `POST /meal-plans`
+**Endpoint**: `POST /meal-plans`
 
-**请求参数**:
+**Request Body**:
 ```json
 {
   "date": "2026-02-23",
@@ -799,7 +804,7 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 {
   "id": 1,
@@ -813,14 +818,14 @@ https://163.221.152.191:8080/api/inventory/detect
 
 ---
 
-### 5. 更新餐食计划
+### 5. Update Meal Plan
 
-**接口地址**: `PUT /meal-plans/{id}`
+**Endpoint**: `PUT /meal-plans/{id}`
 
-**路径参数**:
-- id: 餐食计划ID
+**Path Parameters**:
+- id: Meal plan ID
 
-**请求参数**:
+**Request Body**:
 ```json
 {
   "date": "2026-02-24",
@@ -828,7 +833,7 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 {
   "id": 1,
@@ -842,35 +847,35 @@ https://163.221.152.191:8080/api/inventory/detect
 
 ---
 
-### 6. 删除餐食计划
+### 6. Delete Meal Plan
 
-**接口地址**: `DELETE /meal-plans/{id}`
+**Endpoint**: `DELETE /meal-plans/{id}`
 
-**路径参数**:
-- id: 餐食计划ID
+**Path Parameters**:
+- id: Meal plan ID
 
-**成功响应** (204 No Content):
-- 无响应体
+**Success Response** (204 No Content):
+- No response body
 
 ---
 
-## 收据识别接口
+## Receipt Detection API
 
-### 1. 上传收据图片识别食材
+### 1. Upload Receipt Image to Detect Ingredients (Legacy)
 
-**接口地址**: `POST /api/inventory/detect`
+**Endpoint**: `POST /api/inventory/detect`
 
-**完整URL**: `https://163.221.152.191:8080/api/inventory/detect`
+**Full URL**: `https://163.221.152.191:8080/api/inventory/detect`
 
-**请求格式**: multipart/form-data
+**Request Format**: multipart/form-data
 
-**请求参数**:
-- image: 收据图片文件（必填，类型为 File）
+**Request Parameters**:
+- image: Receipt image file (Required, type: File)
 
-**请求头**:
-- X-User-Id: 1 (必填)
+**Request Headers**:
+- X-User-Id: 1 (Required)
 
-**成功响应** (200 OK):
+**Success Response** (200 OK):
 ```json
 {
   "detectedItems": [
@@ -890,7 +895,7 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**错误响应** (400 Bad Request):
+**Error Response** (400 Bad Request):
 ```json
 {
   "detectedItems": [],
@@ -898,7 +903,7 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**错误响应** (500 Internal Server Error):
+**Error Response** (500 Internal Server Error):
 ```json
 {
   "error": "Receipt detection failed: ...",
@@ -906,73 +911,141 @@ https://163.221.152.191:8080/api/inventory/detect
 }
 ```
 
-**支持的文件格式**:
+**Supported File Formats**:
 - image/jpeg (JPG)
 - image/png (PNG)
 
-**文件大小限制**:
-- 最大10MB
+**File Size Limit**:
+- Maximum 10MB
 
-**说明**:
-- 使用AI/OCR技术识别收据中的食材
-- 返回识别出的食材列表
-- 前端可以批量添加到库存
+**Notes**:
+- Uses AI/OCR technology to recognize ingredients from receipts
+- Returns list of detected ingredients
+- Frontend can batch add to inventory
 
 ---
 
-## 错误处理
+### 2. Upload Receipt Image to Detect Ingredients (New - for Analyze Files button)
 
-### HTTP状态码
+**Endpoint**: `POST /api/inventory/detect`
 
-| 状态码 | 说明 | 示例场景 |
-|--------|------|-----------|
-| 200 | 成功 | 操作成功完成 |
-| 204 | 成功（无内容） | 删除操作成功 |
-| 400 | 错误请求 | 参数缺失或无效 |
-| 404 | 未找到 | 资源不存在 |
-| 500 | 服务器错误 | 内部处理错误 |
+**Full URL**: `https://pbl.florentin.online/api/inventory/detect`
 
-### 错误响应格式
+**API Documentation**: `https://pbl.florentin.online/swagger-ui/index.html#/detect-food-controller`
 
-#### 标准错误响应
+**Request Format**: multipart/form-data
+
+**Request Parameters**:
+- image: Receipt image file (Required, type: Binary file)
+
+**Request Headers**:
+- X-User-Id: 1 (Required)
+
+**Success Response** (200 OK):
 ```json
 {
-  "error": "错误描述",
+  "detectedItems": [
+    {
+      "id": 1,
+      "name": "Tomatoes"
+    },
+    {
+      "id": 2,
+      "name": "Chicken Breast"
+    },
+    {
+      "id": 3,
+      "name": "Olive Oil"
+    }
+  ]
+}
+```
+
+**Error Response** (400 Bad Request):
+```json
+{
+  "detectedItems": [],
+  "message": "Image file is empty"
+}
+```
+
+**Error Response** (500 Internal Server Error):
+```json
+{
+  "error": "Receipt detection failed: ...",
+  "code": 500
+}
+```
+
+**Supported File Formats**:
+- image/jpeg (JPG)
+- image/png (PNG)
+
+**File Size Limit**:
+- Maximum 10MB
+
+**Notes**:
+- This API is exclusively used by the "Analyze Files" button on the Home page
+- Uses AI/OCR technology to recognize ingredients from receipts
+- Returns list of detected ingredients with id (number) and name (string)
+- Frontend can batch add to inventory using the original inventory API
+- All other API calls (add to inventory, get inventory, etc.) use the original endpoints
+
+---
+
+## Error Handling
+
+### HTTP Status Codes
+
+| Status Code | Description | Example Scenario |
+|-------------|---------------|------------------|
+| 200 | Success | Operation completed successfully |
+| 204 | Success (No Content) | Delete operation successful |
+| 400 | Bad Request | Missing or invalid parameters |
+| 404 | Not Found | Resource does not exist |
+| 500 | Internal Server Error | Internal processing error |
+
+### Error Response Formats
+
+#### Standard Error Response
+```json
+{
+  "error": "Error description",
   "code": 400
 }
 ```
 
-#### 用户相关错误响应
+#### User-related Error Response
 ```json
 {
   "success": false,
-  "message": "错误描述"
+  "message": "Error description"
 }
 ```
 
-### 常见错误场景
+### Common Error Scenarios
 
-| 错误信息 | 状态码 | 解决方案 |
-|---------|--------|---------|
-| X-User-Id header is required | 400 | 确保用户已登录并传递X-User-Id header |
-| Username is required | 400 | 提供用户名 |
-| Password is required | 400 | 提供密码 |
-| Username already exists | 400 | 使用不同的用户名 |
-| User not found | 400 | 检查用户名是否正确 |
-| Invalid password | 400 | 检查密码是否正确 |
-| Ingredient name is required | 400 | 提供食材名称 |
-| Inventory not found | 404 | 检查库存项ID是否正确 |
-| Failed to add to inventory | 500 | 检查数据库连接 |
-| Failed to get inventory | 500 | 检查数据库连接 |
-| Receipt detection failed | 500 | 检查收据图片格式和大小 |
+| Error Message | Status Code | Solution |
+|--------------|-------------|-----------|
+| X-User-Id header is required | 400 | Ensure user is logged in and X-User-Id header is passed |
+| Username is required | 400 | Provide username |
+| Password is required | 400 | Provide password |
+| Username already exists | 400 | Use a different username |
+| User not found | 400 | Check if username is correct |
+| Invalid password | 400 | Check if password is correct |
+| Ingredient name is required | 400 | Provide ingredient name |
+| Inventory not found | 404 | Check if inventory item ID is correct |
+| Failed to add to inventory | 500 | Check database connection |
+| Failed to get inventory | 500 | Check database connection |
+| Receipt detection failed | 500 | Check receipt image format and size |
 
 ---
 
-## 数据隔离
+## Data Isolation
 
-### 用户ID传递
+### User ID Transmission
 
-所有需要用户身份验证的接口都通过`X-User-Id` header传递用户ID：
+All APIs requiring user authentication pass the user ID via `X-User-Id` header:
 
 ```javascript
 const userStr = localStorage.getItem('user');
@@ -985,32 +1058,32 @@ const headers = {
 };
 ```
 
-### 数据隔离规则
+### Data Isolation Rules
 
-| 接口 | 隔离规则 |
-|------|---------|
-| GET /inventory | 只返回当前用户的库存 |
-| POST /inventory | 只添加到当前用户的库存 |
-| PUT /inventory/{id} | 只能更新当前用户的库存 |
-| DELETE /inventory/{id} | 只能删除当前用户的库存 |
-| GET /recipes | 只返回当前用户的食谱 |
-| POST /recipes | 只创建为当前用户的食谱 |
-| PUT /recipes/{id} | 只能更新当前用户的食谱 |
-| DELETE /recipes/{id} | 只能删除当前用户的食谱 |
+| Endpoint | Isolation Rule |
+|----------|----------------|
+| GET /inventory | Returns only current user's inventory |
+| POST /inventory | Adds only to current user's inventory |
+| PUT /inventory/{id} | Can only update current user's inventory |
+| DELETE /inventory/{id} | Can only delete current user's inventory |
+| GET /recipes | Returns only current user's recipes |
+| POST /recipes | Creates only for current user |
+| PUT /recipes/{id} | Can only update current user's recipes |
+| DELETE /recipes/{id} | Can only delete current user's recipes |
 
-### 数据隔离实现
+### Data Isolation Implementation
 
-后端通过`userId`字段实现数据隔离：
+Backend implements data isolation through the `userId` field:
 
 ```java
-// 库存查询
+// Inventory query
 List<Inventory> inventories = entityManager.createQuery(
     "SELECT i FROM Inventory i WHERE i.userId = :userId ORDER BY i.id", 
     Inventory.class
 ).setParameter("userId", userId)
 .getResultList();
 
-// 食谱查询
+// Recipe query
 List<Recipe> recipes = entityManager.createQuery(
     "SELECT r FROM Recipe r WHERE r.userId = :userId ORDER BY r.id", 
     Recipe.class
@@ -1020,17 +1093,17 @@ List<Recipe> recipes = entityManager.createQuery(
 
 ---
 
-## 前端API调用示例
+## Frontend API Call Examples
 
-### 使用fetchAPI
+### Using fetchAPI
 
 ```typescript
 import { API_ENDPOINTS, fetchAPI } from "../config/api";
 
-// 获取库存
+// Get inventory
 const inventory = await fetchAPI(API_ENDPOINTS.INVENTORY);
 
-// 添加到库存
+// Add to inventory
 const result = await fetchAPI(API_ENDPOINTS.INVENTORY, {
   method: 'POST',
   body: JSON.stringify({
@@ -1040,12 +1113,12 @@ const result = await fetchAPI(API_ENDPOINTS.INVENTORY, {
 });
 ```
 
-### 使用uploadReceiptImage
+### Using uploadReceiptImage
 
 ```typescript
 import { uploadReceiptImage } from "../config/api";
 
-// 上传收据图片
+// Upload receipt image
 const file = fileInput.files[0];
 const result = await uploadReceiptImage(file);
 
@@ -1054,24 +1127,24 @@ console.log('Detected ingredients:', result.detectedItems);
 
 ---
 
-## 测试工具
+## Testing Tools
 
-### Curl测试
+### Curl Testing
 
-#### 测试用户登录
+#### Test User Login
 ```bash
 curl -X POST https://foodflow-pblclass.onrender.com/api/users/login \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","password":"password123"}'
 ```
 
-#### 测试获取库存
+#### Test Get Inventory
 ```bash
 curl -X GET https://foodflow-pblclass.onrender.com/api/inventory \
   -H "X-User-Id: 1"
 ```
 
-#### 测试添加到库存
+#### Test Add to Inventory
 ```bash
 curl -X POST https://foodflow-pblclass.onrender.com/api/inventory \
   -H "Content-Type: application/json" \
@@ -1079,16 +1152,16 @@ curl -X POST https://foodflow-pblclass.onrender.com/api/inventory \
   -d '{"name":"Tomatoes","category":"Vegetables"}'
 ```
 
-#### 测试收据识别
+#### Test Receipt Detection
 ```bash
 curl -X POST http://163.221.152.191:8080/api/inventory/detect \
   -H "X-User-Id: 1" \
   -F "image=@receipt.jpg"
 ```
 
-### Postman测试
+### Postman Testing
 
-#### 导入环境变量
+#### Import Environment Variables
 
 ```
 API_BASE_URL = https://foodflow-pblclass.onrender.com/api
@@ -1096,7 +1169,7 @@ DETECT_API_BASE_URL = http://163.221.152.191:8080
 USER_ID = 1
 ```
 
-#### 测试用户登录
+#### Test User Login
 
 ```
 Method: POST
@@ -1110,7 +1183,7 @@ Body (raw):
 }
 ```
 
-#### 测试获取库存
+#### Test Get Inventory
 
 ```
 Method: GET
@@ -1119,7 +1192,7 @@ Headers:
   X-User-Id: {{USER_ID}}
 ```
 
-#### 测试收据识别
+#### Test Receipt Detection
 
 ```
 Method: POST
@@ -1127,41 +1200,41 @@ URL: {{DETECT_API_BASE_URL}}/api/inventory/detect
 Headers:
   X-User-Id: {{USER_ID}}
 Body (form-data):
-  image: [选择收据图片文件]
+  image: [Select receipt image file]
 ```
 
 ---
 
-## 版本历史
+## Version History
 
 ### v1.0.0 (2026-02-23)
-- 初始版本
-- 用户管理接口
-- 库存管理接口
-- 食谱管理接口
-- 餐食计划接口
-- 收据识别接口
+- Initial version
+- User management APIs
+- Inventory management APIs
+- Recipe management APIs
+- Meal plan management APIs
+- Receipt detection APIs
 
 ### v1.1.0 (2026-02-23)
-- 添加数据隔离功能
-- 添加X-User-Id header认证
-- 优化错误响应格式
+- Added data isolation functionality
+- Added X-User-Id header authentication
+- Optimized error response format
 
 ### v1.2.0 (2026-02-23)
-- 修复Mixed Content错误
-- 添加HTTPS fallback机制
-- 优化收据识别功能
+- Fixed Mixed Content error
+- Added HTTPS fallback mechanism
+- Optimized receipt detection functionality
 
 ---
 
-## 联系方式
+## Contact
 
-如有问题或建议，请联系：
+For questions or suggestions, please contact:
 
-- **项目地址**: https://github.com/kaxixi6666/FoodFlow_pblclass
-- **文档更新**: 2026-02-23
+- **Project URL**: https://github.com/kaxixi6666/FoodFlow_pblclass
+- **Documentation Updated**: 2026-02-23
 
 ---
 
-**文档版本**: v1.2.0  
-**最后更新**: 2026-02-23
+**Documentation Version**: v1.2.0  
+**Last Updated**: 2026-02-23
