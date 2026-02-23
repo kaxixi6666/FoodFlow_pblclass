@@ -496,6 +496,7 @@ export function Recipes() {
       
       const recipeData = {
         name: detailRecipeName.trim(),
+        status: editingDetailRecipe.status,
         prepTime: detailPrepTime ? `${detailPrepTime} min` : undefined,
         cookTime: detailCookTime ? `${detailCookTime} min` : undefined,
         servings: detailServings ? parseInt(detailServings) : undefined,
