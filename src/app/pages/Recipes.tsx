@@ -187,7 +187,20 @@ export function Recipes() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Error response:", errorText);
-        throw new Error('Failed to save recipe');
+        
+        let errorMessage = 'Failed to save recipe';
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          errorMessage = `Failed to save recipe (${response.status}: ${response.statusText})`;
+        }
+        
+        throw new Error(errorMessage);
       }
       
       const savedRecipe = await response.json();
@@ -228,7 +241,8 @@ export function Recipes() {
       fetchRecipes();
     } catch (error) {
       console.error('Error saving draft:', error);
-      alert('Failed to save draft. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save draft. Please try again.';
+      alert(errorMessage);
     }
   };
 
@@ -267,7 +281,22 @@ export function Recipes() {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to publish recipe');
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        
+        let errorMessage = 'Failed to publish recipe';
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          errorMessage = `Failed to publish recipe (${response.status}: ${response.statusText})`;
+        }
+        
+        throw new Error(errorMessage);
       }
       
       const savedRecipe = await response.json();
@@ -309,7 +338,8 @@ export function Recipes() {
       fetchRecipes();
     } catch (error) {
       console.error('Error publishing recipe:', error);
-      alert('Failed to publish recipe. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to publish recipe. Please try again.';
+      alert(errorMessage);
     }
   };
 
@@ -394,7 +424,22 @@ export function Recipes() {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to delete recipe');
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        
+        let errorMessage = 'Failed to delete recipe';
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          errorMessage = `Failed to delete recipe (${response.status}: ${response.statusText})`;
+        }
+        
+        throw new Error(errorMessage);
       }
       
       setShowDeleteConfirm(false);
@@ -430,7 +475,8 @@ export function Recipes() {
       fetchRecipes();
     } catch (error) {
       console.error('Error deleting recipe:', error);
-      alert('Failed to delete recipe. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete recipe. Please try again.';
+      alert(errorMessage);
     }
   };
 
@@ -468,7 +514,20 @@ export function Recipes() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Error response:", errorText);
-        throw new Error('Failed to update recipe');
+        
+        let errorMessage = 'Failed to update recipe';
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          errorMessage = `Failed to update recipe (${response.status}: ${response.statusText})`;
+        }
+        
+        throw new Error(errorMessage);
       }
       
       const updatedRecipe = await response.json();
@@ -510,7 +569,8 @@ export function Recipes() {
       fetchRecipes();
     } catch (error) {
       console.error('Error updating recipe:', error);
-      alert('Failed to update recipe. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update recipe. Please try again.';
+      alert(errorMessage);
     }
   };
 
@@ -558,7 +618,20 @@ export function Recipes() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Error response:", errorText);
-        throw new Error('Failed to update recipe');
+        
+        let errorMessage = 'Failed to update recipe';
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          errorMessage = `Failed to update recipe (${response.status}: ${response.statusText})`;
+        }
+        
+        throw new Error(errorMessage);
       }
       
       const updatedRecipe = await response.json();
@@ -599,7 +672,8 @@ export function Recipes() {
       fetchRecipes();
     } catch (error) {
       console.error('Error updating recipe:', error);
-      alert('Failed to update recipe. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update recipe. Please try again.';
+      alert(errorMessage);
     }
   };
 
