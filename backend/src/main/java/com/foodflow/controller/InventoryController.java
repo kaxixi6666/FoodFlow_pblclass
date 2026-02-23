@@ -26,7 +26,7 @@ public class InventoryController {
 
     @PostMapping
     @Transactional
-    public ResponseEntity<Inventory> addToInventory(
+    public ResponseEntity<?> addToInventory(
         @RequestBody InventoryRequest request,
         @RequestHeader(value = "X-User-Id", required = false) Long userId
     ) {
@@ -57,7 +57,7 @@ public class InventoryController {
             ingredient.setCategory(request.getCategory() != null ? request.getCategory().trim() : "Uncategorized");
             ingredient.setDescription(request.getDescription() != null ? request.getDescription().trim() : null);
             entityManager.persist(ingredient);
-            entityManager.flush(); // Flush to get the ID
+            entityManager.flush(); // Flush to get ID
             System.out.println("Created ingredient with ID: " + ingredient.getId());
 
             // Always create a new inventory record (no duplicate checking)
@@ -83,7 +83,7 @@ public class InventoryController {
     }
 
     @GetMapping
-    public ResponseEntity<List<InventoryResponse>> getInventory(@RequestHeader(value = "X-User-Id", required = false) Long userId) {
+    public ResponseEntity<?> getInventory(@RequestHeader(value = "X-User-Id", required = false) Long userId) {
         try {
             // Validate userId
             if (userId == null) {
@@ -126,7 +126,7 @@ public class InventoryController {
 
     @PutMapping("/{id}")
     @Transactional
-    public ResponseEntity<Inventory> updateInventory(
+    public ResponseEntity<?> updateInventory(
         @PathVariable Long id,
         @RequestBody InventoryUpdateRequest request,
         @RequestHeader(value = "X-User-Id", required = false) Long userId
@@ -174,7 +174,7 @@ public class InventoryController {
 
     @DeleteMapping("/{id}")
     @Transactional
-    public ResponseEntity<Void> deleteInventory(
+    public ResponseEntity<?> deleteInventory(
         @PathVariable Long id,
         @RequestHeader(value = "X-User-Id", required = false) Long userId
     ) {
