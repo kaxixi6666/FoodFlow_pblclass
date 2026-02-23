@@ -1,6 +1,8 @@
 export const API_BASE_URL = 'https://foodflow-pblclass.onrender.com/api';
+export const DETECT_API_BASE_URL = 'http://163.221.152.191:8080';
 
 console.log('API_BASE_URL:', API_BASE_URL);
+console.log('DETECT_API_BASE_URL:', DETECT_API_BASE_URL);
 
 export const API_ENDPOINTS = {
   INVENTORY: `${API_BASE_URL}/inventory`,
@@ -13,6 +15,7 @@ export const API_ENDPOINTS = {
   USERS: `${API_BASE_URL}/users`,
   MEAL_PLANS: `${API_BASE_URL}/meal-plans`,
   SHOPPING_LIST: `${API_BASE_URL}/shopping-list`,
+  DETECT_INVENTORY: `${DETECT_API_BASE_URL}/api/inventory/detect`,
 };
 
 export const fetchAPI = async (endpoint: string, options?: RequestInit) => {
@@ -54,6 +57,45 @@ export const fetchAPI = async (endpoint: string, options?: RequestInit) => {
     const errorText = await response.text();
     console.error(`API Error: ${response.status} - ${errorText}`);
     throw new Error(`API request failed: ${response.status}`);
+  }
+
+  return response.json();
+};
+
+export const uploadReceiptImage = async (file: File): Promise<any> => {
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  const userId = user?.id;
+  
+  console.log('uploadReceiptImage - userId:', userId);
+  console.log('uploadReceiptImage - file:', file.name, file.type);
+  
+  const formData = new FormData();
+  formData.append('image', file);
+  
+  const headers: HeadersInit = {};
+  
+  // Add X-User-Id header if user is logged in
+  if (userId) {
+    (headers as any)['X-User-Id'] = userId.toString();
+    console.log('uploadReceiptImage - Adding X-User-Id header:', userId);
+  }
+  
+  console.log('uploadReceiptImage - sending request to:', API_ENDPOINTS.DETECT_INVENTORY);
+  
+  const response = await fetch(API_ENDPOINTS.DETECT_INVENTORY, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  console.log('uploadReceiptImage - response status:', response.status);
+  console.log('uploadReceiptImage - response ok:', response.ok);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Detect API Error: ${response.status} - ${errorText}`);
+    throw new Error(`Receipt detection failed: ${response.status}`);
   }
 
   return response.json();

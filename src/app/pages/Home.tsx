@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Upload, Camera, Scan, Search, Check, X, Edit2, Plus, FileText, Image } from "lucide-react";
 import { toast } from "sonner";
-import { API_ENDPOINTS, fetchAPI } from "../config/api";
+import { API_ENDPOINTS, fetchAPI, uploadReceiptImage } from "../config/api";
 
 interface DetectedIngredient {
   id: number;
@@ -62,9 +62,18 @@ export function Home() {
 
   const handleFiles = (files: FileList) => {
     const validFiles = Array.from(files).filter(file => {
-      const validTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+      const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
       return validTypes.includes(file.type) && file.size <= 10 * 1024 * 1024; // 10MB limit
     });
+    
+    const invalidFiles = Array.from(files).filter(file => {
+      const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+      return !validTypes.includes(file.type);
+    });
+    
+    if (invalidFiles.length > 0) {
+      toast.error('仅支持 JPG/PNG 格式图片');
+    }
     
     if (validFiles.length > 0) {
       setSelectedFiles(prev => [...prev, ...validFiles]);
@@ -103,42 +112,38 @@ export function Home() {
     setUploadMessage("Analyzing files...");
     
     try {
-      // Simulate API call to analyze files with LLM
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call the real API to detect ingredients from receipt image
+      const file = selectedFiles[0];
+      const response = await uploadReceiptImage(file);
       
-      // Generate mock detected ingredients based on file types
-      const mockIngredients: DetectedIngredient[] = [
-        {
-          id: 1,
-          name: "Tomatoes",
-          status: "matched",
-          editing: false
-        },
-        {
-          id: 2,
-          name: "Cheddar Cheese",
-          status: "matched",
-          editing: false
-        },
-        {
-          id: 3,
-          name: "Chicken Breast",
-          status: "new",
-          editing: false
-        },
-        {
-          id: 4,
-          name: "Olive Oil",
-          status: "uncertain",
-          editing: false
-        }
-      ];
+      console.log('Detected ingredients response:', response);
+      
+      // Parse the response to get detected items
+      const detectedItems = response.detectedItems || [];
+      
+      // Convert detected items to our format
+      const mockIngredients: DetectedIngredient[] = detectedItems.map((item: any, index: number) => ({
+        id: item.id || index + 1,
+        name: item.name,
+        status: "matched" as const,
+        editing: false
+      }));
       
       setDetectedIngredients(mockIngredients);
       setUploadMessage(`Successfully detected ${mockIngredients.length} ingredients`);
       
     } catch (error) {
       console.error('Error analyzing files:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      if (errorMessage.includes('400')) {
+        toast.error('图片识别失败，请重试');
+      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        toast.error('网络异常，请检查连接');
+      } else {
+        toast.error('图片识别失败，请重试');
+      }
+      
       setUploadMessage('Error analyzing files. Please try again.');
     } finally {
       setUploading(false);
@@ -249,7 +254,7 @@ export function Home() {
         ref={fileUploadInputRef}
         onChange={handleFileUploadChange}
         multiple
-        accept="image/jpeg,image/png,application/pdf"
+        accept="image/jpeg,image/png"
         className="hidden"
       />
       
@@ -303,7 +308,7 @@ export function Home() {
               Browse Files
             </button>
             <p className="text-xs text-gray-400 mt-4">
-              Supports: JPG, PNG, PDF (Max 10MB)
+              Supports: JPG, PNG (Max 10MB)
             </p>
           </div>
         </div>
