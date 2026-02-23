@@ -337,6 +337,8 @@ export function Recipes() {
       alert('Recipe deleted successfully');
       setShowDeleteConfirm(false);
       setEditingRecipe(null);
+      setShowDetail(false);
+      setSelectedRecipe(null);
       
       const fetchRecipes = async () => {
         try {
