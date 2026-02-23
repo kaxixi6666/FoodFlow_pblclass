@@ -26,57 +26,84 @@ public class InventoryController {
     @Transactional
     public ResponseEntity<Inventory> addToInventory(
         @RequestBody InventoryRequest request,
-        @RequestHeader("X-User-Id") Long userId
+        @RequestHeader(value = "X-User-Id", required = false) Long userId
     ) {
-        if (userId == null) {
-            return ResponseEntity.badRequest().build();
+        try {
+            // Validate userId
+            if (userId == null) {
+                System.err.println("Error: X-User-Id header is missing");
+                return ResponseEntity.badRequest().build();
+            }
+
+            // Validate request
+            if (request.getName() == null || request.getName().trim().isEmpty()) {
+                System.err.println("Error: Ingredient name is required");
+                return ResponseEntity.badRequest().build();
+            }
+
+            System.out.println("Adding to inventory - userId: " + userId + ", name: " + request.getName());
+
+            // Always create a new ingredient record (no duplicate checking)
+            Ingredient ingredient = new Ingredient();
+            ingredient.setName(request.getName().trim());
+            ingredient.setCategory(request.getCategory() != null ? request.getCategory().trim() : "Uncategorized");
+            ingredient.setDescription(request.getDescription() != null ? request.getDescription().trim() : null);
+            entityManager.persist(ingredient);
+            entityManager.flush(); // Flush to get the ID
+            System.out.println("Created ingredient with ID: " + ingredient.getId());
+
+            // Always create a new inventory record (no duplicate checking)
+            // Each item has a different creation time and should be preserved separately
+            Inventory inventory = new Inventory();
+            inventory.setIngredient(ingredient);
+            inventory.setUserId(userId);
+            inventory.setLastUpdated(LocalDateTime.now());
+            inventory.setCreatedAt(LocalDateTime.now());
+            entityManager.persist(inventory);
+            entityManager.flush(); // Flush to ensure it's persisted
+            System.out.println("Created inventory with ID: " + inventory.getId());
+
+            return ResponseEntity.ok(inventory);
+        } catch (Exception e) {
+            System.err.println("Error adding to inventory: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to add to inventory: " + e.getMessage(), e);
         }
-
-        // Always create a new ingredient record (no duplicate checking)
-        Ingredient ingredient = new Ingredient();
-        ingredient.setName(request.getName());
-        ingredient.setCategory(request.getCategory());
-        ingredient.setDescription(request.getDescription());
-        entityManager.persist(ingredient);
-
-        // Always create a new inventory record (no duplicate checking)
-        // Each item has a different creation time and should be preserved separately
-        Inventory inventory = new Inventory();
-        inventory.setIngredient(ingredient);
-        inventory.setUserId(userId);
-        inventory.setLastUpdated(LocalDateTime.now());
-        inventory.setCreatedAt(LocalDateTime.now());
-        entityManager.persist(inventory);
-
-        return ResponseEntity.ok(inventory);
     }
 
     @GetMapping
-    public ResponseEntity<List<InventoryResponse>> getInventory(@RequestHeader("X-User-Id") Long userId) {
-        if (userId == null) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<List<InventoryResponse>> getInventory(@RequestHeader(value = "X-User-Id", required = false) Long userId) {
+        try {
+            if (userId == null) {
+                System.err.println("Error: X-User-Id header is missing");
+                return ResponseEntity.badRequest().build();
+            }
 
-        List<Inventory> inventories = entityManager.createQuery(
-            "SELECT i FROM Inventory i WHERE i.userId = :userId ORDER BY i.id", Inventory.class
-        ).setParameter("userId", userId)
-        .getResultList();
+            List<Inventory> inventories = entityManager.createQuery(
+                "SELECT i FROM Inventory i WHERE i.userId = :userId ORDER BY i.id", Inventory.class
+            ).setParameter("userId", userId)
+            .getResultList();
 
-        List<InventoryResponse> response = new ArrayList<>();
-        ZoneId tokyoZone = ZoneId.of("Asia/Tokyo");
-        for (Inventory inventory : inventories) {
-            InventoryResponse item = new InventoryResponse();
-            item.setId(inventory.getId());
-            item.setName(inventory.getIngredient().getName());
-            item.setCategory(inventory.getIngredient().getCategory());
-            // Convert to Tokyo time
-            ZonedDateTime tokyoTime = inventory.getLastUpdated().atZone(ZoneId.systemDefault()).withZoneSameInstant(tokyoZone);
-            // Format with pattern: yyyy-MM-dd HH:mm:ss
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            item.setLastUpdated(tokyoTime.format(formatter));
-            response.add(item);
+            List<InventoryResponse> response = new ArrayList<>();
+            ZoneId tokyoZone = ZoneId.of("Asia/Tokyo");
+            for (Inventory inventory : inventories) {
+                InventoryResponse item = new InventoryResponse();
+                item.setId(inventory.getId());
+                item.setName(inventory.getIngredient().getName());
+                item.setCategory(inventory.getIngredient().getCategory());
+                // Convert to Tokyo time
+                ZonedDateTime tokyoTime = inventory.getLastUpdated().atZone(ZoneId.systemDefault()).withZoneSameInstant(tokyoZone);
+                // Format with pattern: yyyy-MM-dd HH:mm:ss
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                item.setLastUpdated(tokyoTime.format(formatter));
+                response.add(item);
+            }
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("Error getting inventory: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to get inventory: " + e.getMessage(), e);
         }
-        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
@@ -84,53 +111,70 @@ public class InventoryController {
     public ResponseEntity<Inventory> updateInventory(
         @PathVariable Long id,
         @RequestBody InventoryUpdateRequest request,
-        @RequestHeader("X-User-Id") Long userId
+        @RequestHeader(value = "X-User-Id", required = false) Long userId
     ) {
-        if (userId == null) {
-            return ResponseEntity.badRequest().build();
+        try {
+            if (userId == null) {
+                System.err.println("Error: X-User-Id header is missing");
+                return ResponseEntity.badRequest().build();
+            }
+
+            Inventory inventory = entityManager.createQuery(
+                "SELECT i FROM Inventory i WHERE i.id = :id AND i.userId = :userId", Inventory.class)
+                .setParameter("id", id)
+                .setParameter("userId", userId)
+                .getResultList()
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+            if (inventory == null) {
+                System.err.println("Inventory not found with ID: " + id + " for user: " + userId);
+                return ResponseEntity.notFound().build();
+            }
+
+            inventory.setLastUpdated(LocalDateTime.now());
+            entityManager.merge(inventory);
+            entityManager.flush();
+            return ResponseEntity.ok(inventory);
+        } catch (Exception e) {
+            System.err.println("Error updating inventory: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to update inventory: " + e.getMessage(), e);
         }
-
-        Inventory inventory = entityManager.createQuery(
-            "SELECT i FROM Inventory i WHERE i.id = :id AND i.userId = :userId", Inventory.class
-        ).setParameter("id", id)
-        .setParameter("userId", userId)
-        .getResultList()
-        .stream()
-        .findFirst()
-        .orElse(null);
-
-        if (inventory == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        inventory.setLastUpdated(LocalDateTime.now());
-        entityManager.merge(inventory);
-        return ResponseEntity.ok(inventory);
     }
 
     @DeleteMapping("/{id}")
     @Transactional
     public ResponseEntity<Void> deleteInventory(
         @PathVariable Long id,
-        @RequestHeader("X-User-Id") Long userId
+        @RequestHeader(value = "X-User-Id", required = false) Long userId
     ) {
-        if (userId == null) {
-            return ResponseEntity.badRequest().build();
-        }
+        try {
+            if (userId == null) {
+                System.err.println("Error: X-User-Id header is missing");
+                return ResponseEntity.badRequest().build();
+            }
 
-        Inventory inventory = entityManager.createQuery(
-            "SELECT i FROM Inventory i WHERE i.id = :id AND i.userId = :userId", Inventory.class
-        ).setParameter("id", id)
-        .setParameter("userId", userId)
-        .getResultList()
-        .stream()
-        .findFirst()
-        .orElse(null);
+            Inventory inventory = entityManager.createQuery(
+                "SELECT i FROM Inventory i WHERE i.id = :id AND i.userId = :userId", Inventory.class)
+                .setParameter("id", id)
+                .setParameter("userId", userId)
+                .getResultList()
+                .stream()
+                .findFirst()
+                .orElse(null);
 
-        if (inventory != null) {
-            entityManager.remove(inventory);
+            if (inventory != null) {
+                entityManager.remove(inventory);
+                entityManager.flush();
+            }
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            System.err.println("Error deleting inventory: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to delete inventory: " + e.getMessage(), e);
         }
-        return ResponseEntity.noContent().build();
     }
 
     // Request and response classes

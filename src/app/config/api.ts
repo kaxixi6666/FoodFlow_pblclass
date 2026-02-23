@@ -23,6 +23,10 @@ export const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   const user = userStr ? JSON.parse(userStr) : null;
   const userId = user?.id;
   
+  console.log('fetchAPI - endpoint:', endpoint);
+  console.log('fetchAPI - user:', user);
+  console.log('fetchAPI - userId:', userId);
+  
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...options?.headers,
@@ -31,12 +35,20 @@ export const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   // Add X-User-Id header if user is logged in
   if (userId) {
     (headers as any)['X-User-Id'] = userId.toString();
+    console.log('fetchAPI - Adding X-User-Id header:', userId);
+  } else {
+    console.log('fetchAPI - No userId available, user not logged in');
   }
+  
+  console.log('fetchAPI - headers:', headers);
   
   const response = await fetch(url, {
     ...options,
     headers,
   });
+
+  console.log('fetchAPI - response status:', response.status);
+  console.log('fetchAPI - response ok:', response.ok);
 
   if (!response.ok) {
     const errorText = await response.text();
