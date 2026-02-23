@@ -20,6 +20,8 @@ interface Recipe {
   cookTime?: string;
   servings?: number;
   instructions?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 const availableIngredients = [
@@ -64,9 +66,21 @@ export function Recipes() {
         const response = await fetch(API_ENDPOINTS.RECIPES);
         const data = await response.json();
         
-        // Separate recipes by status
-        const draftRecipes = data.filter((recipe: Recipe) => recipe.status === 'draft');
-        const publicRecipesList = data.filter((recipe: Recipe) => recipe.status === 'public');
+        // Separate recipes by status and sort by createdAt (newest first)
+        const draftRecipes = data
+          .filter((recipe: Recipe) => recipe.status === 'draft')
+          .sort((a: Recipe, b: Recipe) => {
+            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return dateB - dateA;
+          });
+        const publicRecipesList = data
+          .filter((recipe: Recipe) => recipe.status === 'public')
+          .sort((a: Recipe, b: Recipe) => {
+            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return dateB - dateA;
+          });
         
         // Set state
         setMyRecipes([...draftRecipes, ...publicRecipesList]);
@@ -113,6 +127,16 @@ export function Recipes() {
         ? prev.filter(item => item !== ingredient)
         : [...prev, ingredient]
     );
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
   };
 
   const handleSaveDraft = async () => {
@@ -178,8 +202,20 @@ export function Recipes() {
         try {
           const response = await fetch(API_ENDPOINTS.RECIPES);
           const data = await response.json();
-          const draftRecipes = data.filter((recipe: Recipe) => recipe.status === 'draft');
-          const publicRecipesList = data.filter((recipe: Recipe) => recipe.status === 'public');
+          const draftRecipes = data
+            .filter((recipe: Recipe) => recipe.status === 'draft')
+            .sort((a: Recipe, b: Recipe) => {
+              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return dateB - dateA;
+            });
+          const publicRecipesList = data
+            .filter((recipe: Recipe) => recipe.status === 'public')
+            .sort((a: Recipe, b: Recipe) => {
+              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return dateB - dateA;
+            });
           setMyRecipes([...draftRecipes, ...publicRecipesList]);
           setPublicRecipes(publicRecipesList);
         } catch (error) {
@@ -247,8 +283,20 @@ export function Recipes() {
         try {
           const response = await fetch(API_ENDPOINTS.RECIPES);
           const data = await response.json();
-          const draftRecipes = data.filter((recipe: Recipe) => recipe.status === 'draft');
-          const publicRecipesList = data.filter((recipe: Recipe) => recipe.status === 'public');
+          const draftRecipes = data
+            .filter((recipe: Recipe) => recipe.status === 'draft')
+            .sort((a: Recipe, b: Recipe) => {
+              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return dateB - dateA;
+            });
+          const publicRecipesList = data
+            .filter((recipe: Recipe) => recipe.status === 'public')
+            .sort((a: Recipe, b: Recipe) => {
+              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return dateB - dateA;
+            });
           setMyRecipes([...draftRecipes, ...publicRecipesList]);
           setPublicRecipes(publicRecipesList);
         } catch (error) {
@@ -357,8 +405,20 @@ export function Recipes() {
         try {
           const response = await fetch(API_ENDPOINTS.RECIPES);
           const data = await response.json();
-          const draftRecipes = data.filter((recipe: Recipe) => recipe.status === 'draft');
-          const publicRecipesList = data.filter((recipe: Recipe) => recipe.status === 'public');
+          const draftRecipes = data
+            .filter((recipe: Recipe) => recipe.status === 'draft')
+            .sort((a: Recipe, b: Recipe) => {
+              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return dateB - dateA;
+            });
+          const publicRecipesList = data
+            .filter((recipe: Recipe) => recipe.status === 'public')
+            .sort((a: Recipe, b: Recipe) => {
+              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return dateB - dateA;
+            });
           setMyRecipes([...draftRecipes, ...publicRecipesList]);
           setPublicRecipes(publicRecipesList);
         } catch (error) {
@@ -425,8 +485,20 @@ export function Recipes() {
         try {
           const response = await fetch(API_ENDPOINTS.RECIPES);
           const data = await response.json();
-          const draftRecipes = data.filter((recipe: Recipe) => recipe.status === 'draft');
-          const publicRecipesList = data.filter((recipe: Recipe) => recipe.status === 'public');
+          const draftRecipes = data
+            .filter((recipe: Recipe) => recipe.status === 'draft')
+            .sort((a: Recipe, b: Recipe) => {
+              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return dateB - dateA;
+            });
+          const publicRecipesList = data
+            .filter((recipe: Recipe) => recipe.status === 'public')
+            .sort((a: Recipe, b: Recipe) => {
+              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return dateB - dateA;
+            });
           setMyRecipes([...draftRecipes, ...publicRecipesList]);
           setPublicRecipes(publicRecipesList);
         } catch (error) {
@@ -502,8 +574,20 @@ export function Recipes() {
         try {
           const response = await fetch(API_ENDPOINTS.RECIPES);
           const data = await response.json();
-          const draftRecipes = data.filter((recipe: Recipe) => recipe.status === 'draft');
-          const publicRecipesList = data.filter((recipe: Recipe) => recipe.status === 'public');
+          const draftRecipes = data
+            .filter((recipe: Recipe) => recipe.status === 'draft')
+            .sort((a: Recipe, b: Recipe) => {
+              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return dateB - dateA;
+            });
+          const publicRecipesList = data
+            .filter((recipe: Recipe) => recipe.status === 'public')
+            .sort((a: Recipe, b: Recipe) => {
+              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return dateB - dateA;
+            });
           setMyRecipes([...draftRecipes, ...publicRecipesList]);
           setPublicRecipes(publicRecipesList);
         } catch (error) {
@@ -720,6 +804,12 @@ export function Recipes() {
                         )}
                       </div>
                     </div>
+
+                    {recipe.updatedAt && (
+                      <div className="mt-3 text-xs text-gray-500 text-right">
+                        Edited: {formatDate(recipe.updatedAt)}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -778,6 +868,12 @@ export function Recipes() {
                         )}
                       </div>
                     </div>
+
+                    {recipe.updatedAt && (
+                      <div className="mt-3 text-xs text-gray-500 text-right">
+                        Edited: {formatDate(recipe.updatedAt)}
+                      </div>
+                    )}
 
                     <div className="mt-6">
                       <button className="w-full py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
