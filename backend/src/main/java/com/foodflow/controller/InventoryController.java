@@ -24,7 +24,14 @@ public class InventoryController {
 
     @PostMapping
     @Transactional
-    public ResponseEntity<Inventory> addToInventory(@RequestBody InventoryRequest request) {
+    public ResponseEntity<Inventory> addToInventory(
+        @RequestBody InventoryRequest request,
+        @RequestHeader("X-User-Id") Long userId
+    ) {
+        if (userId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
         // Always create a new ingredient record (no duplicate checking)
         Ingredient ingredient = new Ingredient();
         ingredient.setName(request.getName());
@@ -36,6 +43,7 @@ public class InventoryController {
         // Each item has a different creation time and should be preserved separately
         Inventory inventory = new Inventory();
         inventory.setIngredient(ingredient);
+        inventory.setUserId(userId);
         inventory.setLastUpdated(LocalDateTime.now());
         inventory.setCreatedAt(LocalDateTime.now());
         entityManager.persist(inventory);
@@ -44,10 +52,15 @@ public class InventoryController {
     }
 
     @GetMapping
-    public ResponseEntity<List<InventoryResponse>> getInventory() {
+    public ResponseEntity<List<InventoryResponse>> getInventory(@RequestHeader("X-User-Id") Long userId) {
+        if (userId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
         List<Inventory> inventories = entityManager.createQuery(
-            "SELECT i FROM Inventory i ORDER BY i.id", Inventory.class
-        ).getResultList();
+            "SELECT i FROM Inventory i WHERE i.userId = :userId ORDER BY i.id", Inventory.class
+        ).setParameter("userId", userId)
+        .getResultList();
 
         List<InventoryResponse> response = new ArrayList<>();
         ZoneId tokyoZone = ZoneId.of("Asia/Tokyo");
@@ -68,8 +81,24 @@ public class InventoryController {
 
     @PutMapping("/{id}")
     @Transactional
-    public ResponseEntity<Inventory> updateInventory(@PathVariable Long id, @RequestBody InventoryUpdateRequest request) {
-        Inventory inventory = entityManager.find(Inventory.class, id);
+    public ResponseEntity<Inventory> updateInventory(
+        @PathVariable Long id,
+        @RequestBody InventoryUpdateRequest request,
+        @RequestHeader("X-User-Id") Long userId
+    ) {
+        if (userId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Inventory inventory = entityManager.createQuery(
+            "SELECT i FROM Inventory i WHERE i.id = :id AND i.userId = :userId", Inventory.class
+        ).setParameter("id", id)
+        .setParameter("userId", userId)
+        .getResultList()
+        .stream()
+        .findFirst()
+        .orElse(null);
+
         if (inventory == null) {
             return ResponseEntity.notFound().build();
         }
@@ -81,8 +110,23 @@ public class InventoryController {
 
     @DeleteMapping("/{id}")
     @Transactional
-    public ResponseEntity<Void> deleteInventory(@PathVariable Long id) {
-        Inventory inventory = entityManager.find(Inventory.class, id);
+    public ResponseEntity<Void> deleteInventory(
+        @PathVariable Long id,
+        @RequestHeader("X-User-Id") Long userId
+    ) {
+        if (userId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Inventory inventory = entityManager.createQuery(
+            "SELECT i FROM Inventory i WHERE i.id = :id AND i.userId = :userId", Inventory.class
+        ).setParameter("id", id)
+        .setParameter("userId", userId)
+        .getResultList()
+        .stream()
+        .findFirst()
+        .orElse(null);
+
         if (inventory != null) {
             entityManager.remove(inventory);
         }

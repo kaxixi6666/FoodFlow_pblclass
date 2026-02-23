@@ -15,6 +15,9 @@ public class Inventory {
     @JoinColumn(name = "ingredient_id", nullable = false)
     private Ingredient ingredient;
 
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
     @Column(name = "last_updated")
     private LocalDateTime lastUpdated;
 
@@ -47,6 +50,14 @@ public class Inventory {
 
     public void setIngredient(Ingredient ingredient) {
         this.ingredient = ingredient;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public LocalDateTime getLastUpdated() {

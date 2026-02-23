@@ -17,12 +17,24 @@ export const API_ENDPOINTS = {
 export const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
   
+  // Get user from localStorage and add userId to headers
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  const userId = user?.id;
+  
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options?.headers,
+  };
+  
+  // Add X-User-Id header if user is logged in
+  if (userId) {
+    (headers as any)['X-User-Id'] = userId.toString();
+  }
+  
   const response = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {
