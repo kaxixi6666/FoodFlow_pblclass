@@ -113,22 +113,79 @@ public class RecipeController {
     }
 
     @PutMapping("/{id}")
+    @Transactional
     public ResponseEntity<Recipe> updateRecipe(@PathVariable Long id, @RequestBody Recipe recipe) {
-        Recipe existingRecipe = entityManager.find(Recipe.class, id);
-        if (existingRecipe == null) {
-            return ResponseEntity.notFound().build();
+        try {
+            System.out.println("Updating recipe ID: " + id);
+            System.out.println("Recipe name: " + recipe.getName());
+            System.out.println("Ingredients: " + (recipe.getIngredients() != null ? recipe.getIngredients().size() : 0));
+            
+            Recipe existingRecipe = entityManager.find(Recipe.class, id);
+            if (existingRecipe == null) {
+                System.err.println("Recipe not found with ID: " + id);
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Update basic fields
+            existingRecipe.setName(recipe.getName());
+            existingRecipe.setStatus(recipe.getStatus());
+            existingRecipe.setPrepTime(recipe.getPrepTime());
+            existingRecipe.setCookTime(recipe.getCookTime());
+            existingRecipe.setServings(recipe.getServings());
+            existingRecipe.setInstructions(recipe.getInstructions());
+            
+            // Process ingredients if provided
+            if (recipe.getIngredients() != null && !recipe.getIngredients().isEmpty()) {
+                List<Ingredient> processedIngredients = new ArrayList<>();
+                for (Ingredient ingredient : recipe.getIngredients()) {
+                    System.out.println("Processing ingredient: " + ingredient.getName() + " (id: " + ingredient.getId() + ")");
+                    
+                    // If ingredient has an ID, fetch it from database
+                    if (ingredient.getId() != null) {
+                        Ingredient existingIngredient = entityManager.find(Ingredient.class, ingredient.getId());
+                        if (existingIngredient != null) {
+                            System.out.println("Found existing ingredient by ID: " + existingIngredient.getName());
+                            processedIngredients.add(existingIngredient);
+                        }
+                    } else {
+                        // Check if ingredient with same name exists
+                        List<Ingredient> existingIngredients = entityManager.createQuery(
+                                "SELECT i FROM Ingredient i WHERE i.name = :name", Ingredient.class)
+                                .setParameter("name", ingredient.getName())
+                                .getResultList();
+                        
+                        if (!existingIngredients.isEmpty()) {
+                            System.out.println("Found existing ingredient by name: " + existingIngredients.get(0).getName());
+                            processedIngredients.add(existingIngredients.get(0));
+                        } else {
+                            // Create new ingredient
+                            System.out.println("Creating new ingredient: " + ingredient.getName());
+                            Ingredient newIngredient = new Ingredient();
+                            newIngredient.setName(ingredient.getName());
+                            newIngredient.setCategory("Uncategorized");
+                            entityManager.persist(newIngredient);
+                            System.out.println("Created new ingredient with ID: " + newIngredient.getId());
+                            processedIngredients.add(newIngredient);
+                        }
+                    }
+                }
+                // Set processed ingredients to recipe
+                existingRecipe.setIngredients(processedIngredients);
+            } else {
+                existingRecipe.setIngredients(null);
+            }
+            
+            // Merge recipe
+            System.out.println("Merging recipe: " + existingRecipe.getName());
+            entityManager.merge(existingRecipe);
+            System.out.println("Recipe updated successfully");
+            
+            return ResponseEntity.ok(existingRecipe);
+        } catch (Exception e) {
+            System.err.println("Error updating recipe: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
-        
-        existingRecipe.setName(recipe.getName());
-        existingRecipe.setStatus(recipe.getStatus());
-        existingRecipe.setPrepTime(recipe.getPrepTime());
-        existingRecipe.setCookTime(recipe.getCookTime());
-        existingRecipe.setServings(recipe.getServings());
-        existingRecipe.setInstructions(recipe.getInstructions());
-        existingRecipe.setIngredients(recipe.getIngredients());
-        
-        entityManager.merge(existingRecipe);
-        return ResponseEntity.ok(existingRecipe);
     }
 
     @DeleteMapping("/{id}")
