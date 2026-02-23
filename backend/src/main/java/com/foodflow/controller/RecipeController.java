@@ -134,6 +134,11 @@ public class RecipeController {
             existingRecipe.setServings(recipe.getServings());
             existingRecipe.setInstructions(recipe.getInstructions());
             
+            // Clear existing ingredients
+            if (existingRecipe.getIngredients() != null) {
+                existingRecipe.getIngredients().clear();
+            }
+            
             // Process ingredients if provided
             if (recipe.getIngredients() != null && !recipe.getIngredients().isEmpty()) {
                 List<Ingredient> processedIngredients = new ArrayList<>();
@@ -169,16 +174,20 @@ public class RecipeController {
                         }
                     }
                 }
-                // Set processed ingredients to recipe
-                existingRecipe.setIngredients(processedIngredients);
-            } else {
-                existingRecipe.setIngredients(null);
+                // Add processed ingredients to recipe
+                for (Ingredient ingredient : processedIngredients) {
+                    existingRecipe.getIngredients().add(ingredient);
+                }
             }
             
             // Merge recipe
             System.out.println("Merging recipe: " + existingRecipe.getName());
             entityManager.merge(existingRecipe);
+            entityManager.flush();
             System.out.println("Recipe updated successfully");
+            
+            // Refresh to get updated data
+            entityManager.refresh(existingRecipe);
             
             return ResponseEntity.ok(existingRecipe);
         } catch (Exception e) {
