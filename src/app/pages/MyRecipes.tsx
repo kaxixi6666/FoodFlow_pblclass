@@ -282,7 +282,7 @@ export function MyRecipes() {
       const fetchRecipes = async () => {
         try {
           const data = await fetchAPI(API_ENDPOINTS.RECIPES);
-          const data = await response.json();
+          
           const draftRecipes = data
             .filter((recipe: Recipe) => recipe.status === 'draft')
             .sort((a: Recipe, b: Recipe) => {
@@ -418,7 +418,7 @@ export function MyRecipes() {
       const fetchRecipes = async () => {
         try {
           const data = await fetchAPI(API_ENDPOINTS.RECIPES);
-          const data = await response.json();
+          
           const draftRecipes = data
             .filter((recipe: Recipe) => recipe.status === 'draft')
             .sort((a: Recipe, b: Recipe) => {
@@ -505,7 +505,7 @@ export function MyRecipes() {
       const fetchRecipes = async () => {
         try {
           const data = await fetchAPI(API_ENDPOINTS.RECIPES);
-          const data = await response.json();
+          
           const draftRecipes = data
             .filter((recipe: Recipe) => recipe.status === 'draft')
             .sort((a: Recipe, b: Recipe) => {
@@ -603,7 +603,7 @@ export function MyRecipes() {
       const fetchRecipes = async () => {
         try {
           const data = await fetchAPI(API_ENDPOINTS.RECIPES);
-          const data = await response.json();
+          
           const draftRecipes = data
             .filter((recipe: Recipe) => recipe.status === 'draft')
             .sort((a: Recipe, b: Recipe) => {
