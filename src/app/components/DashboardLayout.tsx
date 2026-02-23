@@ -6,14 +6,16 @@ import { useAuth } from "./AuthProvider";
 const navItems = [
   { to: "/", label: "Home", icon: Home },
   { to: "/inventory", label: "Inventory", icon: Package },
-  { to: "/recipes", label: "Recipes", icon: BookOpen },
+  { to: "/my-recipes", label: "My Recipes", icon: BookOpen },
+  { to: "/public-recipes", label: "Public Recipes", icon: BookOpen },
   { to: "/planning", label: "Planning", icon: Calendar },
 ];
 
 const pageTitles: Record<string, string> = {
   "/": "Dashboard Overview",
   "/inventory": "Food Inventory",
-  "/recipes": "Recipe Library",
+  "/my-recipes": "My Recipes",
+  "/public-recipes": "Public Recipes",
   "/planning": "Meal Planning",
 };
 

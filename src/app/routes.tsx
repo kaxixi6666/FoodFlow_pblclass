@@ -2,7 +2,8 @@ import { createHashRouter } from "react-router";
 import { DashboardLayout } from "./components/DashboardLayout";
 import { Home } from "./pages/Home";
 import { Inventory } from "./pages/Inventory";
-import { Recipes } from "./pages/Recipes";
+import { MyRecipes } from "./pages/MyRecipes";
+import { PublicRecipes } from "./pages/PublicRecipes";
 import { Planning } from "./pages/Planning";
 import { Login } from "./pages/Login";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -27,7 +28,8 @@ export const router = createHashRouter([
     children: [
       { index: true, Component: Home },
       { path: "inventory", Component: Inventory },
-      { path: "recipes", Component: Recipes },
+      { path: "my-recipes", Component: MyRecipes },
+      { path: "public-recipes", Component: PublicRecipes },
       { path: "planning", Component: Planning },
     ],
   },
