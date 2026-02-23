@@ -395,7 +395,6 @@ export function Recipes() {
         throw new Error('Failed to delete recipe');
       }
       
-      alert('Recipe deleted successfully');
       setShowDeleteConfirm(false);
       setEditingRecipe(null);
       setShowDetail(false);
