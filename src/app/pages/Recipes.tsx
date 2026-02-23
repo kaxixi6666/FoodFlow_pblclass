@@ -804,12 +804,6 @@ export function Recipes() {
                         )}
                       </div>
                     </div>
-
-                    {recipe.updatedAt && (
-                      <div className="mt-3 text-xs text-gray-500 text-right">
-                        Edited: {formatDate(recipe.updatedAt)}
-                      </div>
-                    )}
                   </div>
                 </div>
               ))}
@@ -868,12 +862,6 @@ export function Recipes() {
                         )}
                       </div>
                     </div>
-
-                    {recipe.updatedAt && (
-                      <div className="mt-3 text-xs text-gray-500 text-right">
-                        Edited: {formatDate(recipe.updatedAt)}
-                      </div>
-                    )}
 
                     <div className="mt-6">
                       <button className="w-full py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
@@ -1074,6 +1062,13 @@ export function Recipes() {
                       <div className="text-gray-700 whitespace-pre-line">
                         {selectedRecipe.instructions}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Edit Date */}
+                  {selectedRecipe.updatedAt && (
+                    <div className="text-xs text-gray-500 text-right pt-4">
+                      Edited: {formatDate(selectedRecipe.updatedAt)}
                     </div>
                   )}
                 </div>
