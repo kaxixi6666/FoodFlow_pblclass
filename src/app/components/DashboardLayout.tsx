@@ -7,7 +7,6 @@ const navItems = [
   { to: "/", label: "Home", icon: Home },
   { to: "/inventory", label: "Inventory", icon: Package },
   { to: "/recipes", label: "Recipes", icon: BookOpen },
-  { to: "/smart-filter", label: "Smart Filter", icon: Filter },
   { to: "/planning", label: "Planning", icon: Calendar },
 ];
 
@@ -15,7 +14,6 @@ const pageTitles: Record<string, string> = {
   "/": "Dashboard Overview",
   "/inventory": "Food Inventory",
   "/recipes": "Recipe Library",
-  "/smart-filter": "Smart Recipe Filter",
   "/planning": "Meal Planning",
 };
 

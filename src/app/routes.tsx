@@ -3,7 +3,6 @@ import { DashboardLayout } from "./components/DashboardLayout";
 import { Home } from "./pages/Home";
 import { Inventory } from "./pages/Inventory";
 import { Recipes } from "./pages/Recipes";
-import { SmartFilter } from "./pages/SmartFilter";
 import { Planning } from "./pages/Planning";
 import { Login } from "./pages/Login";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -29,7 +28,6 @@ export const router = createHashRouter([
       { index: true, Component: Home },
       { path: "inventory", Component: Inventory },
       { path: "recipes", Component: Recipes },
-      { path: "smart-filter", Component: SmartFilter },
       { path: "planning", Component: Planning },
     ],
   },
