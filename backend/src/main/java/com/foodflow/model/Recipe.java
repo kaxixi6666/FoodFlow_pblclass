@@ -18,6 +18,12 @@ public class Recipe {
     @Column(name = "status", nullable = false)
     private String status; // draft, private, public
 
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    @Column(name = "is_public", nullable = false)
+    private Boolean isPublic = false;
+
     @Column(name = "prep_time")
     private String prepTime;
 
@@ -68,6 +74,22 @@ public class Recipe {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public Boolean getIsPublic() {
+        return isPublic;
+    }
+
+    public void setIsPublic(Boolean isPublic) {
+        this.isPublic = isPublic;
     }
 
     public String getPrepTime() {

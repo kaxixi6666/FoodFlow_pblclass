@@ -26,16 +26,39 @@ public class RecipeController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Recipe>> getAllRecipes() {
-        List<Recipe> recipes = entityManager.createQuery("SELECT r FROM Recipe r JOIN FETCH r.ingredients", Recipe.class).getResultList();
+    public ResponseEntity<List<Recipe>> getAllRecipes(@RequestHeader("X-User-Id") Long userId) {
+        if (userId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<Recipe> recipes = entityManager.createQuery(
+            "SELECT r FROM Recipe r JOIN FETCH r.ingredients WHERE r.userId = :userId ORDER BY r.id", Recipe.class)
+            .setParameter("userId", userId)
+            .getResultList();
+        return ResponseEntity.ok(recipes);
+    }
+
+    @GetMapping("/public")
+    public ResponseEntity<List<Recipe>> getPublicRecipes() {
+        List<Recipe> recipes = entityManager.createQuery(
+            "SELECT r FROM Recipe r JOIN FETCH r.ingredients WHERE r.isPublic = true ORDER BY r.id", Recipe.class)
+            .getResultList();
         return ResponseEntity.ok(recipes);
     }
 
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<Recipe>> getRecipesByStatus(@PathVariable String status) {
+    public ResponseEntity<List<Recipe>> getRecipesByStatus(
+        @PathVariable String status,
+        @RequestHeader("X-User-Id") Long userId
+    ) {
+        if (userId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
         List<Recipe> recipes = entityManager.createQuery(
-                "SELECT r FROM Recipe r JOIN FETCH r.ingredients WHERE r.status = :status", Recipe.class)
+                "SELECT r FROM Recipe r JOIN FETCH r.ingredients WHERE r.status = :status AND r.userId = :userId", Recipe.class)
                 .setParameter("status", status)
+                .setParameter("userId", userId)
                 .getResultList();
         return ResponseEntity.ok(recipes);
     }
@@ -48,11 +71,24 @@ public class RecipeController {
 
     @PostMapping
     @Transactional
-    public ResponseEntity<Recipe> createRecipe(@RequestBody Recipe recipe) {
+    public ResponseEntity<Recipe> createRecipe(
+        @RequestBody Recipe recipe,
+        @RequestHeader("X-User-Id") Long userId
+    ) {
         try {
+            if (userId == null) {
+                return ResponseEntity.badRequest().build();
+            }
+
             System.out.println("Received recipe: " + recipe.getName());
             System.out.println("Status: " + recipe.getStatus());
             System.out.println("Ingredients: " + (recipe.getIngredients() != null ? recipe.getIngredients().size() : 0));
+            
+            // Set userId and isPublic
+            recipe.setUserId(userId);
+            if (recipe.getIsPublic() == null) {
+                recipe.setIsPublic(false);
+            }
             
             // Set timestamps to null to let lifecycle hooks handle them
             recipe.setCreatedAt(null);
@@ -114,15 +150,31 @@ public class RecipeController {
 
     @PutMapping("/{id}")
     @Transactional
-    public ResponseEntity<Recipe> updateRecipe(@PathVariable Long id, @RequestBody Recipe recipe) {
+    public ResponseEntity<Recipe> updateRecipe(
+        @PathVariable Long id,
+        @RequestBody Recipe recipe,
+        @RequestHeader("X-User-Id") Long userId
+    ) {
         try {
+            if (userId == null) {
+                return ResponseEntity.badRequest().build();
+            }
+
             System.out.println("Updating recipe ID: " + id);
             System.out.println("Recipe name: " + recipe.getName());
             System.out.println("Ingredients: " + (recipe.getIngredients() != null ? recipe.getIngredients().size() : 0));
             
-            Recipe existingRecipe = entityManager.find(Recipe.class, id);
+            Recipe existingRecipe = entityManager.createQuery(
+                "SELECT r FROM Recipe r WHERE r.id = :id AND r.userId = :userId", Recipe.class)
+                .setParameter("id", id)
+                .setParameter("userId", userId)
+                .getResultList()
+                .stream()
+                .findFirst()
+                .orElse(null);
+            
             if (existingRecipe == null) {
-                System.err.println("Recipe not found with ID: " + id);
+                System.err.println("Recipe not found with ID: " + id + " for user: " + userId);
                 return ResponseEntity.notFound().build();
             }
             
@@ -133,6 +185,11 @@ public class RecipeController {
             existingRecipe.setCookTime(recipe.getCookTime());
             existingRecipe.setServings(recipe.getServings());
             existingRecipe.setInstructions(recipe.getInstructions());
+            
+            // Update isPublic if provided
+            if (recipe.getIsPublic() != null) {
+                existingRecipe.setIsPublic(recipe.getIsPublic());
+            }
             
             // Clear existing ingredients
             if (existingRecipe.getIngredients() != null) {
@@ -199,8 +256,23 @@ public class RecipeController {
 
     @DeleteMapping("/{id}")
     @Transactional
-    public ResponseEntity<Void> deleteRecipe(@PathVariable Long id) {
-        Recipe recipe = entityManager.find(Recipe.class, id);
+    public ResponseEntity<Void> deleteRecipe(
+        @PathVariable Long id,
+        @RequestHeader("X-User-Id") Long userId
+    ) {
+        if (userId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Recipe recipe = entityManager.createQuery(
+            "SELECT r FROM Recipe r WHERE r.id = :id AND r.userId = :userId", Recipe.class)
+            .setParameter("id", id)
+            .setParameter("userId", userId)
+            .getResultList()
+            .stream()
+            .findFirst()
+            .orElse(null);
+        
         if (recipe == null) {
             return ResponseEntity.notFound().build();
         }

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { Button } from "../components/ui/button";
-import { API_ENDPOINTS } from "../config/api";
+import { API_ENDPOINTS, fetchAPI } from "../config/api";
 
 interface Ingredient {
   id: number;
@@ -22,6 +22,8 @@ interface Recipe {
   instructions?: string;
   createdAt?: string;
   updatedAt?: string;
+  userId?: number;
+  isPublic?: boolean;
 }
 
 const availableIngredients = [
@@ -48,11 +50,9 @@ export function PublicRecipes() {
   useEffect(() => {
     const fetchRecipes = async () => {
       try {
-        const response = await fetch(API_ENDPOINTS.RECIPES);
-        const data = await response.json();
+        const data = await fetchAPI(`${API_ENDPOINTS.RECIPES}/public`);
         
         const publicRecipesList = data
-          .filter((recipe: Recipe) => recipe.status === 'public')
           .sort((a: Recipe, b: Recipe) => {
             const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
             const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -67,8 +67,7 @@ export function PublicRecipes() {
 
     const fetchIngredients = async () => {
       try {
-        const response = await fetch(API_ENDPOINTS.INGREDIENTS);
-        const data = await response.json();
+        const data = await fetchAPI(API_ENDPOINTS.INGREDIENTS);
         setAllIngredients(data);
       } catch (error) {
         console.error('Error fetching ingredients:', error);
@@ -136,13 +135,7 @@ export function PublicRecipes() {
         ingredients: ingredientsWithIds
       };
       
-      const response = await fetch(`${API_ENDPOINTS.RECIPES}/${editingDetailRecipe.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(recipeData)
-      });
+      const response = await fetchAPI(`${API_ENDPOINTS.RECIPES}/${editingDetailRecipe.id}`, { method: 'PUT', body: JSON.stringify(recipeData) });
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -173,10 +166,8 @@ export function PublicRecipes() {
       
       const fetchRecipes = async () => {
         try {
-          const response = await fetch(API_ENDPOINTS.RECIPES);
-          const data = await response.json();
+          const data = await fetchAPI(API_ENDPOINTS.PUBLIC_RECIPES);
           const publicRecipesList = data
-            .filter((recipe: Recipe) => recipe.status === 'public')
             .sort((a: Recipe, b: Recipe) => {
               const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
               const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;

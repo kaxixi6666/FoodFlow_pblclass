@@ -6,6 +6,7 @@ export const API_ENDPOINTS = {
   INVENTORY: `${API_BASE_URL}/inventory`,
   INGREDIENTS: `${API_BASE_URL}/ingredients`,
   RECIPES: `${API_BASE_URL}/recipes`,
+  PUBLIC_RECIPES: `${API_BASE_URL}/recipes/public`,
   RECIPE_INGREDIENTS: `${API_BASE_URL}/recipe-ingredients`,
   USERS_REGISTER: `${API_BASE_URL}/users/register`,
   USERS_LOGIN: `${API_BASE_URL}/users/login`,

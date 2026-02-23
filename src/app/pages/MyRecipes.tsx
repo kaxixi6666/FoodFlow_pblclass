@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { Button } from "../components/ui/button";
-import { API_ENDPOINTS } from "../config/api";
+import { API_ENDPOINTS, fetchAPI } from "../config/api";
 
 interface Ingredient {
   id: number;
@@ -61,8 +61,7 @@ export function MyRecipes() {
   useEffect(() => {
     const fetchRecipes = async () => {
       try {
-        const response = await fetch(API_ENDPOINTS.RECIPES);
-        const data = await response.json();
+        const data = await fetchAPI(API_ENDPOINTS.RECIPES);
         
         const draftRecipes = data
           .filter((recipe: Recipe) => recipe.status === 'draft')
@@ -87,8 +86,7 @@ export function MyRecipes() {
 
     const fetchIngredients = async () => {
       try {
-        const response = await fetch(API_ENDPOINTS.INGREDIENTS);
-        const data = await response.json();
+        const data = await fetchAPI(API_ENDPOINTS.INGREDIENTS);
         setAllIngredients(data);
       } catch (error) {
         console.error('Error fetching ingredients:', error);
@@ -161,11 +159,8 @@ export function MyRecipes() {
       
       console.log("Sending recipe data:", JSON.stringify(recipeData, null, 2));
       
-      const response = await fetch(API_ENDPOINTS.RECIPES, {
+      const response = await fetchAPI(API_ENDPOINTS.RECIPES, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify(recipeData)
       });
       
@@ -201,8 +196,7 @@ export function MyRecipes() {
       
       const fetchRecipes = async () => {
         try {
-          const response = await fetch(API_ENDPOINTS.RECIPES);
-          const data = await response.json();
+          const data = await fetchAPI(API_ENDPOINTS.RECIPES);
           const draftRecipes = data
             .filter((recipe: Recipe) => recipe.status === 'draft')
             .sort((a: Recipe, b: Recipe) => {
@@ -253,11 +247,8 @@ export function MyRecipes() {
         ingredients: ingredientsWithIds
       };
       
-      const response = await fetch(API_ENDPOINTS.RECIPES, {
+      const response = await fetchAPI(API_ENDPOINTS.RECIPES, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify(recipeData)
       });
       
@@ -290,7 +281,7 @@ export function MyRecipes() {
       
       const fetchRecipes = async () => {
         try {
-          const response = await fetch(API_ENDPOINTS.RECIPES);
+          const data = await fetchAPI(API_ENDPOINTS.RECIPES);
           const data = await response.json();
           const draftRecipes = data
             .filter((recipe: Recipe) => recipe.status === 'draft')
@@ -396,7 +387,7 @@ export function MyRecipes() {
     if (!editingRecipe) return;
     
     try {
-      const response = await fetch(`${API_ENDPOINTS.RECIPES}/${editingRecipe.id}`, {
+      const response = await fetchAPI(`${API_ENDPOINTS.RECIPES}/${editingRecipe.id}`, {
         method: 'DELETE'
       });
       
@@ -426,7 +417,7 @@ export function MyRecipes() {
       
       const fetchRecipes = async () => {
         try {
-          const response = await fetch(API_ENDPOINTS.RECIPES);
+          const data = await fetchAPI(API_ENDPOINTS.RECIPES);
           const data = await response.json();
           const draftRecipes = data
             .filter((recipe: Recipe) => recipe.status === 'draft')
@@ -480,13 +471,7 @@ export function MyRecipes() {
         ingredients: ingredientsWithIds
       };
       
-      const response = await fetch(`${API_ENDPOINTS.RECIPES}/${editingDetailRecipe.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(recipeData)
-      });
+      const response = await fetchAPI(`${API_ENDPOINTS.RECIPES}/${editingDetailRecipe.id}`, { method: 'PUT', body: JSON.stringify(recipeData) });
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -519,7 +504,7 @@ export function MyRecipes() {
       
       const fetchRecipes = async () => {
         try {
-          const response = await fetch(API_ENDPOINTS.RECIPES);
+          const data = await fetchAPI(API_ENDPOINTS.RECIPES);
           const data = await response.json();
           const draftRecipes = data
             .filter((recipe: Recipe) => recipe.status === 'draft')
@@ -579,11 +564,8 @@ export function MyRecipes() {
       
       console.log("Updating recipe data:", JSON.stringify(recipeData, null, 2));
       
-      const response = await fetch(`${API_ENDPOINTS.RECIPES}/${editingRecipe.id}`, {
+      const response = await fetchAPI(`${API_ENDPOINTS.RECIPES}/${editingRecipe.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify(recipeData)
       });
       
@@ -620,7 +602,7 @@ export function MyRecipes() {
       
       const fetchRecipes = async () => {
         try {
-          const response = await fetch(API_ENDPOINTS.RECIPES);
+          const data = await fetchAPI(API_ENDPOINTS.RECIPES);
           const data = await response.json();
           const draftRecipes = data
             .filter((recipe: Recipe) => recipe.status === 'draft')
