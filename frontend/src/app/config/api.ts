@@ -99,8 +99,8 @@ export const analyzeImageWithZhipuAI = async (imageBase64: string, scenario: str
   
   // Build prompt based on scenario
   const prompt = scenario === 'fridge'
-    ? 'Identify all ingredient names in this fridge photo, ignore packaging and background, return only a JSON array in the format: ["ingredient1","ingredient2"], with no extra explanations.'
-    : 'Identify all text in this receipt image, extract the names, quantities, and purchase dates of ingredients, return only a structured JSON array in the format: [{"name":"ingredient name","quantity":"quantity"}], with no extra explanations.';
+    ? 'Please identify all food ingredients visible in this fridge image, ignore packaging and background.\nRules:\nReturn ONLY pure JSON array, no markdown, no ```json, no backticks, no extra words.\nFormat: ["ingredient1","ingredient2","ingredient3"]\nDo NOT add any explanation outside the JSON.'
+    : 'Please identify all text in this receipt image, accurately extract food ingredient names and quantities.\nRules:\nReturn ONLY pure JSON array, no markdown, no ```json, no backticks, no extra words.\nFormat: [{"name":"ingredient","quantity":"number or unit"}]\nDo NOT add any explanation outside the JSON.';
   
   // Build request body
   const requestBody = {
