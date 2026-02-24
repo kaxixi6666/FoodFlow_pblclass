@@ -25,29 +25,35 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegistrationRequest request) {
-        if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(createErrorResponse("Username is required"));
+        try {
+            if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(createErrorResponse("Username is required"));
+            }
+
+            if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(createErrorResponse("Password is required"));
+            }
+
+            if (userService.existsByUsername(request.getUsername())) {
+                return ResponseEntity.badRequest().body(createErrorResponse("Username already exists"));
+            }
+
+            User user = userService.registerUser(
+                request.getUsername(),
+                request.getPassword(),
+                request.getEmail()
+            );
+
+            if (user == null) {
+                return ResponseEntity.badRequest().body(createErrorResponse("Registration failed"));
+            }
+
+            return ResponseEntity.ok(createSuccessResponse(user));
+        } catch (Exception e) {
+            System.err.println("Registration error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(createErrorResponse("Internal server error"));
         }
-
-        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(createErrorResponse("Password is required"));
-        }
-
-        if (userService.existsByUsername(request.getUsername())) {
-            return ResponseEntity.badRequest().body(createErrorResponse("Username already exists"));
-        }
-
-        User user = userService.registerUser(
-            request.getUsername(),
-            request.getPassword(),
-            request.getEmail()
-        );
-
-        if (user == null) {
-            return ResponseEntity.badRequest().body(createErrorResponse("Registration failed"));
-        }
-
-        return ResponseEntity.ok(createSuccessResponse(user));
     }
 
     @PostMapping("/login")
