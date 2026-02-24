@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Upload, Camera, Scan, Search, Check, X, Edit2, Plus, FileText, Image } from "lucide-react";
 import { toast } from "sonner";
-import { API_ENDPOINTS, fetchAPI, uploadReceiptImage, uploadReceiptImageNew } from "../config/api";
+import { API_ENDPOINTS, fetchAPI, uploadReceiptImageNew } from "../config/api";
 
 interface DetectedIngredient {
   id: number;
