@@ -47,23 +47,33 @@ public class JwtService {
 
     // Get signing key for JWT token
     private Key getSigningKey() {
-        if (jwtSecret == null || jwtSecret.trim().isEmpty()) {
-            jwtSecret = "default-secret-key-for-development-change-in-production-enough-length";
-        }
-        
         try {
-            byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
-            if (keyBytes.length < 32) {
-                keyBytes = jwtSecret.getBytes();
+            byte[] keyBytes;
+            
+            if (jwtSecret == null || jwtSecret.trim().isEmpty()) {
+                keyBytes = Keys.secretKeyFor(SignatureAlgorithm.HS256).getEncoded();
+            } else {
+                try {
+                    keyBytes = Decoders.BASE64.decode(jwtSecret);
+                    if (keyBytes.length < 32) {
+                        keyBytes = jwtSecret.getBytes();
+                        if (keyBytes.length < 32) {
+                            String paddedKey = String.format("%-64s", jwtSecret).replace(' ', '0');
+                            keyBytes = paddedKey.getBytes();
+                        }
+                    }
+                } catch (Exception e) {
+                    keyBytes = jwtSecret.getBytes();
+                    if (keyBytes.length < 32) {
+                        String paddedKey = String.format("%-64s", jwtSecret).replace(' ', '0');
+                        keyBytes = paddedKey.getBytes();
+                    }
+                }
             }
+            
             return Keys.hmacShaKeyFor(keyBytes);
         } catch (Exception e) {
-            byte[] keyBytes = jwtSecret.getBytes();
-            if (keyBytes.length < 32) {
-                String paddedKey = String.format("%-32s", jwtSecret).replace(' ', '0');
-                keyBytes = paddedKey.getBytes();
-            }
-            return Keys.hmacShaKeyFor(keyBytes);
+            return Keys.secretKeyFor(SignatureAlgorithm.HS256);
         }
     }
 
