@@ -171,8 +171,24 @@ export const analyzeImageWithZhipuAI = async (imageBase64: string, scenario: str
     
     // Extract content from response
     if (result.choices && result.choices.length > 0) {
-      const content = result.choices[0].message.content;
-      console.log('analyzeImageWithZhipuAI - content:', content);
+      let content = result.choices[0].message.content;
+      console.log('analyzeImageWithZhipuAI - raw content:', content);
+      
+      // Clean up markdown formatting if present
+      content = content.trim();
+      
+      // Remove markdown code blocks if present
+      if (content.startsWith('```json')) {
+        content = content.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+      } else if (content.startsWith('```')) {
+        content = content.replace(/^```\s*/, '').replace(/```\s*$/, '');
+      }
+      
+      // Remove any remaining backticks
+      content = content.replace(/`/g, '');
+      
+      content = content.trim();
+      console.log('analyzeImageWithZhipuAI - cleaned content:', content);
       
       // Parse content based on scenario
       try {
@@ -196,6 +212,7 @@ export const analyzeImageWithZhipuAI = async (imageBase64: string, scenario: str
         }
       } catch (parseError) {
         console.error('analyzeImageWithZhipuAI - parse error:', parseError);
+        console.error('analyzeImageWithZhipuAI - content that failed to parse:', content);
         throw new Error('Failed to parse AI response. Please try again.');
       }
     } else {
