@@ -47,8 +47,15 @@ public class JwtService {
 
     // Get signing key for JWT token
     private Key getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
-        return Keys.hmacShaKeyFor(keyBytes);
+        try {
+            // Try BASE64 decoding first
+            byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (Exception e) {
+            // If BASE64 decoding fails, use the raw secret
+            byte[] keyBytes = jwtSecret.getBytes();
+            return Keys.hmacShaKeyFor(keyBytes);
+        }
     }
 
     // Check if JWT token is expired
