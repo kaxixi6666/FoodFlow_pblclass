@@ -88,13 +88,30 @@ public class UserController {
     }
 
     private Map<String, Object> createSuccessResponse(User user) {
-        // Generate token for the user
-        String token = jwtService.generateToken(user.getUsername());
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "User registered successfully");
-        response.put("user", createUserResponse(user, token));
-        return response;
+        try {
+            String token = jwtService.generateToken(user.getUsername());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "User registered successfully");
+            
+            Map<String, Object> userResponse = new HashMap<>();
+            userResponse.put("id", user.getId());
+            userResponse.put("username", user.getUsername());
+            userResponse.put("email", user.getEmail());
+            userResponse.put("createdAt", user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
+            userResponse.put("token", token);
+            
+            response.put("user", userResponse);
+            return response;
+        } catch (Exception e) {
+            System.err.println("Error creating success response: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "User registered successfully");
+            response.put("userId", user.getId());
+            return response;
+        }
     }
 
     private Map<String, Object> createErrorResponse(String message) {
