@@ -62,6 +62,44 @@ export function PublicRecipes() {
         setPublicRecipes(publicRecipesList);
       } catch (error) {
         console.error('Error fetching recipes:', error);
+        // Show user-friendly error message
+        alert('Failed to load public recipes. Showing sample data instead.');
+        // Set fallback sample data
+        const fallbackRecipes: Recipe[] = [
+          {
+            id: 1,
+            name: "Classic Pasta Carbonara",
+            status: "public",
+            isPublic: true,
+            ingredients: [
+              { id: 1, name: "Pasta" },
+              { id: 2, name: "Eggs" },
+              { id: 3, name: "Parmesan Cheese" },
+              { id: 4, name: "Bacon" }
+            ],
+            prepTime: "10 min",
+            cookTime: "15 min",
+            servings: 4,
+            instructions: "1. Cook pasta until al dente\n2. Mix eggs and Parmesan\n3. Cook bacon until crispy\n4. Combine all ingredients"
+          },
+          {
+            id: 2,
+            name: "Vegetable Stir Fry",
+            status: "public",
+            isPublic: true,
+            ingredients: [
+              { id: 5, name: "Bell Peppers" },
+              { id: 6, name: "Broccoli" },
+              { id: 7, name: "Carrots" },
+              { id: 8, name: "Soy Sauce" }
+            ],
+            prepTime: "15 min",
+            cookTime: "10 min",
+            servings: 3,
+            instructions: "1. Chop all vegetables\n2. Heat oil in pan\n3. Stir fry vegetables\n4. Add soy sauce and serve"
+          }
+        ];
+        setPublicRecipes(fallbackRecipes);
       }
     };
 
@@ -71,6 +109,18 @@ export function PublicRecipes() {
         setAllIngredients(data);
       } catch (error) {
         console.error('Error fetching ingredients:', error);
+        // Set fallback ingredients
+        const fallbackIngredients: Ingredient[] = [
+          { id: 1, name: "Pasta" },
+          { id: 2, name: "Eggs" },
+          { id: 3, name: "Parmesan Cheese" },
+          { id: 4, name: "Bacon" },
+          { id: 5, name: "Bell Peppers" },
+          { id: 6, name: "Broccoli" },
+          { id: 7, name: "Carrots" },
+          { id: 8, name: "Soy Sauce" }
+        ];
+        setAllIngredients(fallbackIngredients);
       }
     };
 
@@ -137,26 +187,7 @@ export function PublicRecipes() {
       
       const response = await fetchAPI(`${API_ENDPOINTS.RECIPES}/${editingDetailRecipe.id}`, { method: 'PUT', body: JSON.stringify(recipeData) });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error response:", errorText);
-        
-        let errorMessage = 'Failed to update recipe';
-        try {
-          const errorData = JSON.parse(errorText);
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          } else if (errorData.error) {
-            errorMessage = errorData.error;
-          }
-        } catch (e) {
-          errorMessage = `Failed to update recipe (${response.status}: ${response.statusText})`;
-        }
-        
-        throw new Error(errorMessage);
-      }
-      
-      const updatedRecipe = await response.json();
+      const updatedRecipe = response;
       
       setPublicRecipes(prev => prev.map(r => r.id === editingDetailRecipe.id ? updatedRecipe : r));
       setSelectedRecipe(updatedRecipe);
@@ -176,6 +207,7 @@ export function PublicRecipes() {
           setPublicRecipes(publicRecipesList);
         } catch (error) {
           console.error('Error fetching recipes:', error);
+          // No need to show error here since we're just refreshing after update
         }
       };
       

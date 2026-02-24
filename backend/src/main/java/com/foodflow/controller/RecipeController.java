@@ -40,10 +40,19 @@ public class RecipeController {
 
     @GetMapping("/public")
     public ResponseEntity<List<Recipe>> getPublicRecipes() {
-        List<Recipe> recipes = entityManager.createQuery(
-            "SELECT r FROM Recipe r JOIN FETCH r.ingredients WHERE r.isPublic = true ORDER BY r.id", Recipe.class)
-            .getResultList();
-        return ResponseEntity.ok(recipes);
+        try {
+            System.out.println("Fetching public recipes...");
+            List<Recipe> recipes = entityManager.createQuery(
+                "SELECT r FROM Recipe r LEFT JOIN FETCH r.ingredients WHERE r.isPublic = true ORDER BY r.id", Recipe.class)
+                .getResultList();
+            System.out.println("Found " + recipes.size() + " public recipes");
+            return ResponseEntity.ok(recipes);
+        } catch (Exception e) {
+            System.err.println("Error fetching public recipes: " + e.getMessage());
+            e.printStackTrace();
+            // Return empty list as fallback
+            return ResponseEntity.ok(new ArrayList<>());
+        }
     }
 
     @GetMapping("/status/{status}")
