@@ -1,0 +1,1 @@
+const userStr = localStorage.getItem('user'); console.log('User in localStorage:', userStr); if (userStr) { const user = JSON.parse(userStr); console.log('User object:', user); console.log('User token:', user.token); }
