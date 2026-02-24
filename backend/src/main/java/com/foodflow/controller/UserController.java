@@ -34,12 +34,13 @@ public class UserController {
                 return ResponseEntity.badRequest().body(createErrorResponse("Password is required"));
             }
 
-            if (userService.existsByUsername(request.getUsername())) {
+            String trimmedUsername = request.getUsername().trim();
+            if (userService.existsByUsername(trimmedUsername)) {
                 return ResponseEntity.badRequest().body(createErrorResponse("Username already exists"));
             }
 
             User user = userService.registerUser(
-                request.getUsername(),
+                trimmedUsername,
                 request.getPassword(),
                 request.getEmail()
             );
