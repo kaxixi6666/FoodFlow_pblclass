@@ -264,12 +264,14 @@ public class InventoryController {
      * Detect text from image and translate to English
      * @param image Uploaded image file
      * @param userId User ID
+     * @param scenario Analysis scenario (receipt or fridge)
      * @return Translated English result
      */
     @PostMapping("/detect")
     public ResponseEntity<?> detectInventory(
         @RequestParam("image") MultipartFile image,
-        @RequestHeader(value = "X-User-Id", required = false) Long userId
+        @RequestHeader(value = "X-User-Id", required = false) Long userId,
+        @RequestParam(value = "scenario", defaultValue = "receipt") String scenario
     ) {
         try {
             // Validate image
@@ -296,11 +298,12 @@ public class InventoryController {
             byte[] imageData = image.getBytes();
 
             // Call ZhipuAI service for recognition and translation
-            String result = zhipuAIService.detectAndTranslateImage(imageData, imageFormat);
+            String result = zhipuAIService.detectAndTranslateImage(imageData, imageFormat, scenario);
 
             // Return result
             Map<String, Object> response = new HashMap<>();
             response.put("result", result);
+            response.put("scenario", scenario);
             if (userId != null) {
                 response.put("userId", userId);
             }

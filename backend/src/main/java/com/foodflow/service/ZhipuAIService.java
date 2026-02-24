@@ -36,10 +36,11 @@ public class ZhipuAIService {
      * Detect text from image and translate to English
      * @param imageData Image byte array
      * @param imageFormat Image format (jpg, png, webp)
+     * @param scenario Analysis scenario (receipt or fridge)
      * @return Translated English result
      * @throws IOException
      */
-    public String detectAndTranslateImage(byte[] imageData, String imageFormat) throws IOException {
+    public String detectAndTranslateImage(byte[] imageData, String imageFormat, String scenario) throws IOException {
         // Convert image to Base64
         String base64Image = Base64.encodeBase64String(imageData);
         String imageUrl = "data:image/" + imageFormat + ";base64," + base64Image;
@@ -72,10 +73,19 @@ public class ZhipuAIService {
         imageContent.put("image_url", imageUrlObject);
         userContent.add(imageContent);
 
-        // Translation instruction
+        // Translation instruction based on scenario
         JSONObject textContent = new JSONObject();
         textContent.put("type", "text");
-        textContent.put("text", "Please identify all text in this receipt image (including product names, prices, dates, quantities), accurately translate to English, maintain original format, and only return the translation result.");
+        
+        String instruction;
+        if ("fridge".equalsIgnoreCase(scenario)) {
+            instruction = "Please identify all ingredient names in this refrigerator photo, ignore packaging/background, only return JSON array: [\"ingredient1\",\"ingredient2\"], no extra explanation.";
+        } else {
+            // Default to receipt scenario
+            instruction = "Please identify all text in this receipt image (including product names, prices, dates, quantities), accurately translate to English, maintain original format, and only return translation result.";
+        }
+        
+        textContent.put("text", instruction);
         userContent.add(textContent);
 
         userMessage.put("content", userContent);

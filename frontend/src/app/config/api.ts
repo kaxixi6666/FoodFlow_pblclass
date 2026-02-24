@@ -1,5 +1,5 @@
 export const API_BASE_URL = 'https://foodflow-pblclass.onrender.com/api';
-export const NEW_DETECT_API_URL = 'https://pbl.florentin.online/api/inventory/detect';
+export const NEW_DETECT_API_URL = `${API_BASE_URL}/inventory/detect`;
 
 console.log('API_BASE_URL:', API_BASE_URL);
 console.log('NEW_DETECT_API_URL:', NEW_DETECT_API_URL);
@@ -61,7 +61,7 @@ export const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   return response.json();
 };
 
-export const uploadReceiptImageNew = async (file: File): Promise<any> => {
+export const uploadReceiptImageNew = async (file: File, scenario: string = 'receipt'): Promise<any> => {
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
   const userId = user?.id;
@@ -70,9 +70,11 @@ export const uploadReceiptImageNew = async (file: File): Promise<any> => {
   console.log('uploadReceiptImageNew - userId:', userId);
   console.log('uploadReceiptImageNew - token:', token);
   console.log('uploadReceiptImageNew - file:', file.name, file.type);
+  console.log('uploadReceiptImageNew - scenario:', scenario);
   
   const formData = new FormData();
   formData.append('image', file);
+  formData.append('scenario', scenario);
   
   const headers: HeadersInit = {};
   

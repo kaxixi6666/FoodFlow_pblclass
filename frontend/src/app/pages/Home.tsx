@@ -37,6 +37,7 @@ export function Home() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState("");
+  const [currentScenario, setCurrentScenario] = useState<string>("receipt");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileUploadInputRef = useRef<HTMLInputElement>(null);
@@ -93,7 +94,13 @@ export function Home() {
     }
   };
 
-  const handleScanClick = () => {
+  const handleScanReceiptClick = () => {
+    setCurrentScenario("receipt");
+    fileInputRef.current?.click();
+  };
+
+  const handleScanFridgeClick = () => {
+    setCurrentScenario("fridge");
     fileInputRef.current?.click();
   };
 
@@ -112,13 +119,14 @@ export function Home() {
     setUploadMessage("Analyzing files...");
     
     try {
-      // Call the new HTTPS API to detect ingredients from receipt image
+      // Call new HTTPS API to detect ingredients from image
       const file = selectedFiles[0];
-      const response = await uploadReceiptImageNew(file);
+      const response = await uploadReceiptImageNew(file, currentScenario);
       
       console.log('Detected ingredients response:', response);
+      console.log('Scenario:', currentScenario);
       
-      // Parse the response to get detected items
+      // Parse response to get detected items
       const detectedItems = response.detectedItems || [];
       
       // Convert detected items to our format
@@ -265,14 +273,14 @@ export function Home() {
           <h3 className="text-lg text-gray-900 mb-4">Quick Actions</h3>
           <div className="space-y-3">
             <button 
-              onClick={handleScanClick}
+              onClick={handleScanReceiptClick}
               className="w-full px-6 py-4 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-3"
             >
               <Scan className="w-5 h-5" />
               <span>Scan Receipt</span>
             </button>
             <button 
-              onClick={handleScanClick}
+              onClick={handleScanFridgeClick}
               className="w-full px-6 py-4 bg-white text-gray-700 rounded-lg border-2 border-gray-200 hover:border-primary hover:bg-orange-50 transition-colors flex items-center justify-center gap-3"
             >
               <Camera className="w-5 h-5" />
