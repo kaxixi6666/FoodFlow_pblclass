@@ -165,7 +165,11 @@ public class RecipeController {
             // Persist recipe
             System.out.println("Persisting recipe: " + recipe.getName());
             entityManager.persist(recipe);
+            entityManager.flush();
             System.out.println("Recipe persisted with ID: " + recipe.getId());
+            
+            // Refresh to ensure all relationships are loaded
+            entityManager.refresh(recipe);
             
             return ResponseEntity.ok(recipe);
         } catch (Exception e) {

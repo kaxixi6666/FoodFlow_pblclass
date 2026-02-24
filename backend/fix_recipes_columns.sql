@@ -1,0 +1,4 @@
+-- Add missing columns to recipes table
+ALTER TABLE recipes ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT false;
+ALTER TABLE recipes ADD COLUMN IF NOT EXISTS user_id BIGINT NOT NULL DEFAULT 1;
+ALTER TABLE recipes ADD COLUMN IF NOT EXISTS note TEXT;
