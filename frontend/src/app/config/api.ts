@@ -56,7 +56,13 @@ export const fetchAPI = async (endpoint: string, options?: RequestInit) => {
     throw new Error(`API request failed: ${response.status}`);
   }
 
-  return response.json();
+  // Handle empty responses (e.g., 204 No Content)
+  const text = await response.text();
+  if (!text || text.trim() === '') {
+    return null;
+  }
+
+  return JSON.parse(text);
 };
 
 /**
