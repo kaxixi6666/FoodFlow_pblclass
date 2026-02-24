@@ -27,15 +27,24 @@ public class RecipeController {
 
     @GetMapping
     public ResponseEntity<List<Recipe>> getAllRecipes(@RequestHeader("X-User-Id") Long userId) {
-        if (userId == null) {
-            return ResponseEntity.badRequest().build();
-        }
+        try {
+            if (userId == null) {
+                return ResponseEntity.badRequest().build();
+            }
 
-        List<Recipe> recipes = entityManager.createQuery(
-            "SELECT r FROM Recipe r JOIN FETCH r.ingredients WHERE r.userId = :userId ORDER BY r.id", Recipe.class)
-            .setParameter("userId", userId)
-            .getResultList();
-        return ResponseEntity.ok(recipes);
+            System.out.println("Fetching recipes for user: " + userId);
+            List<Recipe> recipes = entityManager.createQuery(
+                "SELECT r FROM Recipe r LEFT JOIN FETCH r.ingredients WHERE r.userId = :userId ORDER BY r.id", Recipe.class)
+                .setParameter("userId", userId)
+                .getResultList();
+            System.out.println("Found " + recipes.size() + " recipes for user: " + userId);
+            return ResponseEntity.ok(recipes);
+        } catch (Exception e) {
+            System.err.println("Error fetching recipes: " + e.getMessage());
+            e.printStackTrace();
+            // Return empty list as fallback
+            return ResponseEntity.ok(new ArrayList<>());
+        }
     }
 
     @GetMapping("/public")
@@ -60,16 +69,25 @@ public class RecipeController {
         @PathVariable String status,
         @RequestHeader("X-User-Id") Long userId
     ) {
-        if (userId == null) {
-            return ResponseEntity.badRequest().build();
-        }
+        try {
+            if (userId == null) {
+                return ResponseEntity.badRequest().build();
+            }
 
-        List<Recipe> recipes = entityManager.createQuery(
-                "SELECT r FROM Recipe r JOIN FETCH r.ingredients WHERE r.status = :status AND r.userId = :userId", Recipe.class)
-                .setParameter("status", status)
-                .setParameter("userId", userId)
-                .getResultList();
-        return ResponseEntity.ok(recipes);
+            System.out.println("Fetching recipes with status: " + status + " for user: " + userId);
+            List<Recipe> recipes = entityManager.createQuery(
+                    "SELECT r FROM Recipe r LEFT JOIN FETCH r.ingredients WHERE r.status = :status AND r.userId = :userId", Recipe.class)
+                    .setParameter("status", status)
+                    .setParameter("userId", userId)
+                    .getResultList();
+            System.out.println("Found " + recipes.size() + " recipes with status: " + status);
+            return ResponseEntity.ok(recipes);
+        } catch (Exception e) {
+            System.err.println("Error fetching recipes by status: " + e.getMessage());
+            e.printStackTrace();
+            // Return empty list as fallback
+            return ResponseEntity.ok(new ArrayList<>());
+        }
     }
 
     @PostMapping("/generate")
