@@ -1,6 +1,7 @@
-import { Search, ChevronDown, Trash2, X } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Trash2, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { Button } from "../components/ui/button";
 import { API_ENDPOINTS, fetchAPI } from "../config/api";
 
 interface InventoryItem {
@@ -19,6 +20,7 @@ export function Inventory() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc"> ("desc");
 
   // Fetch inventory data from backend API
   useEffect(() => {
@@ -107,6 +109,20 @@ export function Inventory() {
     setSelectedCategory(e.target.value);
   };
 
+  const toggleSortOrder = () => {
+    const newSortOrder = sortOrder === "desc" ? "asc" : "desc";
+    setSortOrder(newSortOrder);
+    
+    // Sort the inventory items based on lastUpdated
+    const sortedInventory = [...inventory].sort((a, b) => {
+      const dateA = new Date(a.lastUpdated).getTime();
+      const dateB = new Date(b.lastUpdated).getTime();
+      return newSortOrder === "asc" ? dateA - dateB : dateB - dateA;
+    });
+    
+    setInventory(sortedInventory);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -150,26 +166,27 @@ export function Inventory() {
       </div>
 
       <div className="mb-4 flex gap-2">
-        <button
+        <Button
           onClick={toggleSelectAll}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          variant="default"
         >
           {allSelected ? 'Deselect All' : 'Select All'}
-        </button>
+        </Button>
         {selectedCount > 0 && (
           <>
-            <button
+            <Button
               onClick={clearSelected}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              variant="destructive"
             >
+              <Trash2 className="w-4 h-4" />
               Delete Selected ({selectedCount})
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={clearAllSelections}
-              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+              variant="secondary"
             >
               Clear Selection
-            </button>
+            </Button>
           </>
         )}
       </div>
@@ -187,7 +204,10 @@ export function Inventory() {
             </TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Category</TableHead>
-            <TableHead>Last Updated</TableHead>
+            <TableHead className="cursor-pointer flex items-center gap-1" onClick={toggleSortOrder}>
+              <span>Last Updated</span>
+              {sortOrder === "desc" ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+            </TableHead>
             <TableHead className="w-12">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -213,12 +233,14 @@ export function Inventory() {
                 <TableCell>{item.category}</TableCell>
                 <TableCell>{item.lastUpdated}</TableCell>
                 <TableCell>
-                  <button
+                  <Button
                     onClick={() => toggleSelect(item.id)}
-                    className="p-2 text-red-500 hover:text-red-700"
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
                   >
                     <Trash2 className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </TableCell>
               </TableRow>
             ))
