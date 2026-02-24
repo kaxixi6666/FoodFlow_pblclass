@@ -3,6 +3,7 @@ package com.foodflow.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "users")
@@ -16,6 +17,7 @@ public class User {
     private String username;
 
     @Column(nullable = false, length = 100)
+    @JsonIgnore
     private String password;
 
     @Column(length = 100)
