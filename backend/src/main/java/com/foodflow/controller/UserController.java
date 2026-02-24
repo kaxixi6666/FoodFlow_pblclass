@@ -109,7 +109,7 @@ public class UserController {
         userResponse.put("id", user.getId());
         userResponse.put("username", user.getUsername());
         userResponse.put("email", user.getEmail());
-        userResponse.put("createdAt", user.getCreatedAt());
+        userResponse.put("createdAt", user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
         userResponse.put("token", token);
         return userResponse;
     }
