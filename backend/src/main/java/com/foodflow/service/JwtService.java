@@ -71,8 +71,11 @@ public class JwtService {
                 }
             }
             
-            return Keys.hmacShaKeyFor(keyBytes);
+            Key key = Keys.hmacShaKeyFor(keyBytes);
+            return key;
         } catch (Exception e) {
+            System.err.println("Error generating JWT signing key: " + e.getMessage());
+            e.printStackTrace();
             return Keys.secretKeyFor(SignatureAlgorithm.HS256);
         }
     }
