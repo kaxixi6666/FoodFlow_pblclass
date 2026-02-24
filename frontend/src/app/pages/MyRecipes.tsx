@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { Button } from "../components/ui/button";
-import { API_ENDPOINTS, fetchAPI } from "../config/api";
+import { API_ENDPOINTS, fetchAPI, fetchAPIWithResponse } from "../config/api";
 
 interface Ingredient {
   id: number;
@@ -20,6 +20,7 @@ interface Recipe {
   cookTime?: string;
   servings?: number;
   instructions?: string;
+  note?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -39,6 +40,7 @@ export function MyRecipes() {
   const [servings, setServings] = useState("");
   const [prepTime, setPrepTime] = useState("");
   const [cookTime, setCookTime] = useState("");
+  const [note, setNote] = useState("");
   const [myRecipes, setMyRecipes] = useState<Recipe[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [showDetail, setShowDetail] = useState(false);
@@ -55,6 +57,7 @@ export function MyRecipes() {
   const [detailServings, setDetailServings] = useState("");
   const [detailPrepTime, setDetailPrepTime] = useState("");
   const [detailCookTime, setDetailCookTime] = useState("");
+  const [detailNote, setDetailNote] = useState("");
   const [detailSelectedIngredients, setDetailSelectedIngredients] = useState<string[]>([]);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
 
@@ -154,12 +157,13 @@ export function MyRecipes() {
         cookTime: cookTime ? `${cookTime} min` : undefined,
         servings: servings ? parseInt(servings) : undefined,
         instructions: instructions.trim() || undefined,
+        note: note.trim() || undefined,
         ingredients: ingredientsWithIds
       };
       
       console.log("Sending recipe data:", JSON.stringify(recipeData, null, 2));
       
-      const response = await fetchAPI(API_ENDPOINTS.RECIPES, {
+      const response = await fetchAPIWithResponse(API_ENDPOINTS.RECIPES, {
         method: 'POST',
         body: JSON.stringify(recipeData)
       });
@@ -244,10 +248,11 @@ export function MyRecipes() {
         cookTime: cookTime ? `${cookTime} min` : undefined,
         servings: servings ? parseInt(servings) : undefined,
         instructions: instructions.trim() || undefined,
+        note: note.trim() || undefined,
         ingredients: ingredientsWithIds
       };
       
-      const response = await fetchAPI(API_ENDPOINTS.RECIPES, {
+      const response = await fetchAPIWithResponse(API_ENDPOINTS.RECIPES, {
         method: 'POST',
         body: JSON.stringify(recipeData)
       });
@@ -318,6 +323,7 @@ export function MyRecipes() {
     setServings("");
     setPrepTime("");
     setCookTime("");
+    setNote("");
     setIsCreating(false);
     setIsEditing(false);
     setEditingRecipe(null);
@@ -372,6 +378,7 @@ export function MyRecipes() {
       setDetailServings(recipe.servings?.toString() || "");
       setDetailPrepTime(recipe.prepTime?.replace(" min", "") || "");
       setDetailCookTime(recipe.cookTime?.replace(" min", "") || "");
+      setDetailNote(recipe.note || "");
       setSelectedRecipe(recipe);
       setShowDetail(true);
     }, 100);
@@ -468,10 +475,11 @@ export function MyRecipes() {
         cookTime: detailCookTime ? `${detailCookTime} min` : undefined,
         servings: detailServings ? parseInt(detailServings) : undefined,
         instructions: detailInstructions.trim() || undefined,
+        note: detailNote.trim() || undefined,
         ingredients: ingredientsWithIds
       };
       
-      const response = await fetchAPI(`${API_ENDPOINTS.RECIPES}/${editingDetailRecipe.id}`, { method: 'PUT', body: JSON.stringify(recipeData) });
+      const response = await fetchAPIWithResponse(`${API_ENDPOINTS.RECIPES}/${editingDetailRecipe.id}`, { method: 'PUT', body: JSON.stringify(recipeData) });
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -564,7 +572,7 @@ export function MyRecipes() {
       
       console.log("Updating recipe data:", JSON.stringify(recipeData, null, 2));
       
-      const response = await fetchAPI(`${API_ENDPOINTS.RECIPES}/${editingRecipe.id}`, {
+      const response = await fetchAPIWithResponse(`${API_ENDPOINTS.RECIPES}/${editingRecipe.id}`, {
         method: 'PUT',
         body: JSON.stringify(recipeData)
       });
@@ -688,6 +696,16 @@ export function MyRecipes() {
                     value={instructions}
                     onChange={(e) => setInstructions(e.target.value)}
                     rows={6}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Note</label>
+                  <Textarea
+                    placeholder="Add a note about this recipe"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    rows={3}
                   />
                 </div>
 
@@ -976,6 +994,17 @@ export function MyRecipes() {
                       placeholder="Enter step-by-step cooking instructions"
                     ></textarea>
                   </div>
+
+                  {/* Note */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Note</label>
+                    <textarea
+                      value={detailNote}
+                      onChange={(e) => setDetailNote(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 min-h-20"
+                      placeholder="Add a note about this recipe"
+                    ></textarea>
+                  </div>
                 </div>
               ) : (
                 /* View Mode */
@@ -1029,6 +1058,16 @@ export function MyRecipes() {
                       <h4 className="text-lg font-semibold text-gray-900 mb-3">Instructions</h4>
                       <div className="text-gray-700 whitespace-pre-line">
                         {selectedRecipe.instructions}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Note */}
+                  {selectedRecipe.note && (
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-3">Note</h4>
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-gray-700">
+                        {selectedRecipe.note}
                       </div>
                     </div>
                   )}

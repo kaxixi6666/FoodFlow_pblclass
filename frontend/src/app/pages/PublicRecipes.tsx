@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { Button } from "../components/ui/button";
-import { API_ENDPOINTS, fetchAPI } from "../config/api";
+import { API_ENDPOINTS, fetchAPI, fetchAPIWithResponse } from "../config/api";
 
 interface Ingredient {
   id: number;
@@ -20,6 +20,7 @@ interface Recipe {
   cookTime?: string;
   servings?: number;
   instructions?: string;
+  note?: string;
   createdAt?: string;
   updatedAt?: string;
   userId?: number;
@@ -45,6 +46,7 @@ export function PublicRecipes() {
   const [detailServings, setDetailServings] = useState("");
   const [detailPrepTime, setDetailPrepTime] = useState("");
   const [detailCookTime, setDetailCookTime] = useState("");
+  const [detailNote, setDetailNote] = useState("");
   const [detailSelectedIngredients, setDetailSelectedIngredients] = useState<string[]>([]);
 
   useEffect(() => {
@@ -182,12 +184,13 @@ export function PublicRecipes() {
         cookTime: detailCookTime ? `${detailCookTime} min` : undefined,
         servings: detailServings ? parseInt(detailServings) : undefined,
         instructions: detailInstructions.trim() || undefined,
+        note: detailNote.trim() || undefined,
         ingredients: ingredientsWithIds
       };
       
-      const response = await fetchAPI(`${API_ENDPOINTS.RECIPES}/${editingDetailRecipe.id}`, { method: 'PUT', body: JSON.stringify(recipeData) });
+      const response = await fetchAPIWithResponse(`${API_ENDPOINTS.RECIPES}/${editingDetailRecipe.id}`, { method: 'PUT', body: JSON.stringify(recipeData) });
       
-      const updatedRecipe = response;
+      const updatedRecipe = await response.json();
       
       setPublicRecipes(prev => prev.map(r => r.id === editingDetailRecipe.id ? updatedRecipe : r));
       setSelectedRecipe(updatedRecipe);
@@ -436,6 +439,17 @@ export function PublicRecipes() {
                       placeholder="Enter step-by-step cooking instructions"
                     ></textarea>
                   </div>
+
+                  {/* Note */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Note</label>
+                    <textarea
+                      value={detailNote}
+                      onChange={(e) => setDetailNote(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 min-h-20"
+                      placeholder="Add a note about this recipe"
+                    ></textarea>
+                  </div>
                 </div>
               ) : (
                 /* View Mode */
@@ -489,6 +503,16 @@ export function PublicRecipes() {
                       <h4 className="text-lg font-semibold text-gray-900 mb-3">Instructions</h4>
                       <div className="text-gray-700 whitespace-pre-line">
                         {selectedRecipe.instructions}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Note */}
+                  {selectedRecipe.note && (
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-3">Note</h4>
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-gray-700">
+                        {selectedRecipe.note}
                       </div>
                     </div>
                   )}
