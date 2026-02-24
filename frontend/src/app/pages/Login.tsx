@@ -30,12 +30,15 @@ export function Login() {
           return;
         }
 
+        const trimmedUsername = username.trim();
+        const trimmedEmail = email.trim();
+
         const response = await fetchAPI(API_ENDPOINTS.USERS_REGISTER, {
           method: 'POST',
           body: JSON.stringify({
-            username,
+            username: trimmedUsername,
             password,
-            email
+            email: trimmedEmail
           })
         });
 
@@ -44,7 +47,7 @@ export function Login() {
           const loginResponse = await fetchAPI(API_ENDPOINTS.USERS_LOGIN, {
             method: 'POST',
             body: JSON.stringify({
-              username,
+              username: trimmedUsername,
               password
             })
           });
@@ -60,10 +63,12 @@ export function Login() {
         }
       } else {
         // Login logic
+        const trimmedUsername = username.trim();
+
         const response = await fetchAPI(API_ENDPOINTS.USERS_LOGIN, {
           method: 'POST',
           body: JSON.stringify({
-            username,
+            username: trimmedUsername,
             password
           })
         });

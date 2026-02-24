@@ -15,20 +15,22 @@ public class UserService {
     private EntityManager entityManager;
 
     public boolean existsByUsername(String username) {
+        String trimmedUsername = username.trim();
         List<User> users = entityManager.createQuery(
             "SELECT u FROM User u WHERE u.username = :username", User.class
-        ).setParameter("username", username).getResultList();
+        ).setParameter("username", trimmedUsername).getResultList();
         return !users.isEmpty();
     }
 
     @Transactional
     public User registerUser(String username, String password, String email) {
-        if (existsByUsername(username)) {
+        String trimmedUsername = username.trim();
+        if (existsByUsername(trimmedUsername)) {
             return null;
         }
 
         User user = new User();
-        user.setUsername(username);
+        user.setUsername(trimmedUsername);
         user.setPassword(password);
         user.setEmail(email);
         entityManager.persist(user);
@@ -36,9 +38,10 @@ public class UserService {
     }
 
     public User findByUsername(String username) {
+        String trimmedUsername = username.trim();
         List<User> users = entityManager.createQuery(
             "SELECT u FROM User u WHERE u.username = :username", User.class
-        ).setParameter("username", username).getResultList();
+        ).setParameter("username", trimmedUsername).getResultList();
         return users.isEmpty() ? null : users.get(0);
     }
 
