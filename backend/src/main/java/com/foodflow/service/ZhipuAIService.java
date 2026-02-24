@@ -1,4 +1,4 @@
-package com.foodflow.service;
+package main.java.com.foodflow.service;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
