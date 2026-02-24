@@ -13,7 +13,7 @@ interface InventoryItem {
   editing: boolean;
 }
 
-const categories = ["All Categories", "Vegetables", "Fruits", "Dairy", "Meat", "Seafood", "Grains", "Beverages", "Condiments"];
+const categories = ["All Categories", "Vegetables", "Fruits", "Dairy", "Meat", "Seafood", "Grains", "Beverages", "Condiments", "Uncategorized"];
 
 export function Inventory() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
