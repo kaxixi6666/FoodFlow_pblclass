@@ -48,14 +48,21 @@ public class JwtService {
     // Get signing key for JWT token
     private Key getSigningKey() {
         if (jwtSecret == null || jwtSecret.trim().isEmpty()) {
-            jwtSecret = "default-secret-key-for-development-change-in-production";
+            jwtSecret = "default-secret-key-for-development-change-in-production-enough-length";
         }
         
         try {
             byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+            if (keyBytes.length < 32) {
+                keyBytes = jwtSecret.getBytes();
+            }
             return Keys.hmacShaKeyFor(keyBytes);
         } catch (Exception e) {
             byte[] keyBytes = jwtSecret.getBytes();
+            if (keyBytes.length < 32) {
+                String paddedKey = String.format("%-32s", jwtSecret).replace(' ', '0');
+                keyBytes = paddedKey.getBytes();
+            }
             return Keys.hmacShaKeyFor(keyBytes);
         }
     }
