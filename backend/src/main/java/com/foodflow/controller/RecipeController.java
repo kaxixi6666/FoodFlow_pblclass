@@ -212,6 +212,7 @@ public class RecipeController {
             existingRecipe.setCookTime(recipe.getCookTime());
             existingRecipe.setServings(recipe.getServings());
             existingRecipe.setInstructions(recipe.getInstructions());
+            existingRecipe.setNote(recipe.getNote());
             
             // Update isPublic if provided
             if (recipe.getIsPublic() != null) {

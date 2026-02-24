@@ -36,6 +36,9 @@ public class Recipe {
     @Column(name = "instructions", columnDefinition = "TEXT")
     private String instructions;
 
+    @Column(name = "note", columnDefinition = "TEXT")
+    private String note;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -122,6 +125,14 @@ public class Recipe {
 
     public void setInstructions(String instructions) {
         this.instructions = instructions;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
     }
 
     public LocalDateTime getCreatedAt() {
