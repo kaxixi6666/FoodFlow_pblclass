@@ -111,10 +111,11 @@ public class RecipeController {
             System.out.println("Status: " + recipe.getStatus());
             System.out.println("Ingredients: " + (recipe.getIngredients() != null ? recipe.getIngredients().size() : 0));
             
-            // Set userId and isPublic
+            // Set userId and isPublic based on status
             recipe.setUserId(userId);
             if (recipe.getIsPublic() == null) {
-                recipe.setIsPublic(false);
+                // Set isPublic based on status
+                recipe.setIsPublic("public".equals(recipe.getStatus()));
             }
             
             // Set timestamps to null to let lifecycle hooks handle them
