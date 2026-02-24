@@ -1,8 +1,6 @@
-export const API_BASE_URL = 'https://foodflow-pblclass.onrender.com/api';
-export const NEW_DETECT_API_URL = `${API_BASE_URL}/inventory/detect`;
+export const API_BASE_URL = 'http://localhost:8080/api';
 
 console.log('API_BASE_URL:', API_BASE_URL);
-console.log('NEW_DETECT_API_URL:', NEW_DETECT_API_URL);
 
 export const API_ENDPOINTS = {
   INVENTORY: `${API_BASE_URL}/inventory`,
@@ -61,61 +59,162 @@ export const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   return response.json();
 };
 
-export const uploadReceiptImageNew = async (file: File, scenario: string = 'receipt'): Promise<any> => {
+/**
+ * Convert image file to Base64 encoding
+ * @param file Image file to convert
+ * @returns Base64 encoded string with data URL prefix
+ */
+export const convertImageToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result);
+    };
+    reader.onerror = (error) => {
+      reject(error);
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+/**
+ * Call Zhipu GLM-4V API for image analysis
+ * @param imageBase64 Base64 encoded image data (with data URL prefix)
+ * @param scenario Analysis scenario (receipt or fridge)
+ * @returns Analysis result from Zhipu API
+ */
+export const analyzeImageWithZhipuAI = async (imageBase64: string, scenario: string = 'receipt'): Promise<any> => {
+  const ZHIPU_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+  const ZHIPU_API_KEY = '5f41881a249d43ada948ef287b72f0c9.HQNZjfXnADSoFFDX'; // Replace with your actual API key
+  
+  // Get user from localStorage
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
   const userId = user?.id;
-  const token = user?.token;
   
-  console.log('uploadReceiptImageNew - userId:', userId);
-  console.log('uploadReceiptImageNew - token:', token);
-  console.log('uploadReceiptImageNew - file:', file.name, file.type);
-  console.log('uploadReceiptImageNew - scenario:', scenario);
+  console.log('analyzeImageWithZhipuAI - userId:', userId);
+  console.log('analyzeImageWithZhipuAI - scenario:', scenario);
+  console.log('analyzeImageWithZhipuAI - imageBase64 length:', imageBase64.length);
   
-  const formData = new FormData();
-  formData.append('image', file);
-  formData.append('scenario', scenario);
+  // Build prompt based on scenario
+  const prompt = scenario === 'fridge'
+    ? 'Identify all ingredient names in this fridge photo, ignore packaging and background, return only a JSON array in the format: ["ingredient1","ingredient2"], with no extra explanations.'
+    : 'Identify all text in this receipt image, extract the names, quantities, and purchase dates of ingredients, return only a structured JSON array in the format: [{"name":"ingredient name","quantity":"quantity"}], with no extra explanations.';
   
-  const headers: HeadersInit = {};
+  // Build request body
+  const requestBody = {
+    model: 'glm-4v',
+    messages: [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'image_url',
+            image_url: {
+              url: imageBase64
+            }
+          },
+          {
+            type: 'text',
+            text: prompt
+          }
+        ]
+      }
+    ],
+    temperature: 0.7,
+    max_tokens: 2048
+  };
+  
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${ZHIPU_API_KEY}`
+  };
   
   // Add X-User-Id header if user is logged in
   if (userId) {
     (headers as any)['X-User-Id'] = userId.toString();
-    console.log('uploadReceiptImageNew - Adding X-User-Id header:', userId);
+    console.log('analyzeImageWithZhipuAI - Adding X-User-Id header:', userId);
   }
   
-  // Add Authorization header if token is available
-  if (token) {
-    (headers as any)['Authorization'] = `Bearer ${token}`;
-    console.log('uploadReceiptImageNew - Adding Authorization header: Bearer token');
-  }
+  console.log('analyzeImageWithZhipuAI - sending request to:', ZHIPU_API_URL);
+  console.log('analyzeImageWithZhipuAI - request body:', JSON.stringify(requestBody, null, 2));
   
-  console.log('uploadReceiptImageNew - sending request to:', NEW_DETECT_API_URL);
-  console.log('uploadReceiptImageNew - headers:', headers);
-  
-  let response;
   try {
-    // Try new HTTPS API
-    response = await fetch(NEW_DETECT_API_URL, {
+    const response = await fetch(ZHIPU_API_URL, {
       method: 'POST',
       headers,
-      body: formData,
+      body: JSON.stringify(requestBody)
     });
-    console.log('uploadReceiptImageNew - new API response status:', response.status);
-    console.log('uploadReceiptImageNew - new API response ok:', response.ok);
+    
+    console.log('analyzeImageWithZhipuAI - response status:', response.status);
+    console.log('analyzeImageWithZhipuAI - response ok:', response.ok);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Zhipu API Error: ${response.status} - ${errorText}`);
+      
+      // Handle specific error cases
+      if (response.status === 401) {
+        throw new Error('Invalid Zhipu API Key. Please check your API key configuration.');
+      } else if (response.status === 429) {
+        throw new Error('Zhipu API rate limit exceeded. Please try again later.');
+      } else if (response.status === 500) {
+        throw new Error('Zhipu API server error. Please try again later.');
+      } else {
+        throw new Error(`Zhipu API request failed: ${response.status} - ${errorText}`);
+      }
+    }
+    
+    const result = await response.json();
+    console.log('analyzeImageWithZhipuAI - result:', result);
+    
+    // Extract content from response
+    if (result.choices && result.choices.length > 0) {
+      const content = result.choices[0].message.content;
+      console.log('analyzeImageWithZhipuAI - content:', content);
+      
+      // Parse the content based on scenario
+      try {
+        if (scenario === 'fridge') {
+          // For fridge scenario, expect JSON array: ["ingredient1", "ingredient2"]
+          const ingredients = JSON.parse(content);
+          const detectedItems = ingredients.map((name: string, index: number) => ({
+            id: index + 1,
+            name: name
+          }));
+          return { detectedItems, scenario };
+        } else {
+          // For receipt scenario, expect JSON array: [{"name":"ingredient name","quantity":"quantity"}]
+          const items = JSON.parse(content);
+          const detectedItems = items.map((item: any, index: number) => ({
+            id: index + 1,
+            name: item.name,
+            quantity: item.quantity
+          }));
+          return { detectedItems, scenario };
+        }
+      } catch (parseError) {
+        console.error('analyzeImageWithZhipuAI - parse error:', parseError);
+        throw new Error('Failed to parse AI response. Please try again.');
+      }
+    } else {
+      throw new Error('Invalid response from Zhipu API. Please try again.');
+    }
   } catch (error) {
-    console.log('uploadReceiptImageNew - New HTTPS API failed:', error);
-    throw new Error('Receipt detection API failed');
+    console.error('analyzeImageWithZhipuAI - error:', error);
+    
+    if (error instanceof Error) {
+      // Re-throw known errors
+      if (error.message.includes('Zhipu API')) {
+        throw error;
+      }
+      // Handle network errors
+      if (error.message.includes('fetch') || error.message.includes('network')) {
+        throw new Error('Network error. Please check your internet connection and try again.');
+      }
+    }
+    
+    throw new Error('Failed to analyze image. Please try again.');
   }
-
-  console.log('uploadReceiptImageNew - final response status:', response.status);
-  console.log('uploadReceiptImageNew - final response ok:', response.ok);
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`Detect API Error: ${response.status} - ${errorText}`);
-    throw new Error(`Receipt detection failed: ${response.status}`);
-  }
-
-  return response.json();
 };

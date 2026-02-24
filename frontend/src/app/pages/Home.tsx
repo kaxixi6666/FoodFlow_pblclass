@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Upload, Camera, Scan, Search, Check, X, Edit2, Plus, FileText, Image } from "lucide-react";
 import { toast } from "sonner";
-import { API_ENDPOINTS, fetchAPI, uploadReceiptImageNew } from "../config/api";
+import { API_ENDPOINTS, fetchAPI, convertImageToBase64, analyzeImageWithZhipuAI } from "../config/api";
 
 interface DetectedIngredient {
   id: number;
@@ -119,12 +119,17 @@ export function Home() {
     setUploadMessage("Analyzing files...");
     
     try {
-      // Call new HTTPS API to detect ingredients from image
+      // Convert image to Base64
       const file = selectedFiles[0];
-      const response = await uploadReceiptImageNew(file, currentScenario);
+      const imageBase64 = await convertImageToBase64(file);
+      
+      console.log('handleSubmitFiles - imageBase64 length:', imageBase64.length);
+      console.log('handleSubmitFiles - scenario:', currentScenario);
+      
+      // Call Zhipu AI API for analysis
+      const response = await analyzeImageWithZhipuAI(imageBase64, currentScenario);
       
       console.log('Detected ingredients response:', response);
-      console.log('Scenario:', currentScenario);
       
       // Parse response to get detected items
       const detectedItems = response.detectedItems || [];
@@ -144,12 +149,18 @@ export function Home() {
       console.error('Error analyzing files:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
-      if (errorMessage.includes('400')) {
-        toast.error('图片识别失败，请重试');
-      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-        toast.error('网络异常，请检查连接');
+      if (errorMessage.includes('Invalid Zhipu API Key')) {
+        toast.error('Invalid Zhipu API Key. Please check your API key configuration.');
+      } else if (errorMessage.includes('rate limit')) {
+        toast.error('Zhipu API rate limit exceeded. Please try again later.');
+      } else if (errorMessage.includes('server error')) {
+        toast.error('Zhipu API server error. Please try again later.');
+      } else if (errorMessage.includes('Network error')) {
+        toast.error('Network error. Please check your internet connection and try again.');
+      } else if (errorMessage.includes('Failed to parse AI response')) {
+        toast.error('Failed to parse AI response. Please try again.');
       } else {
-        toast.error('图片识别失败，请重试');
+        toast.error('Failed to analyze image. Please try again.');
       }
       
       setUploadMessage('Error analyzing files. Please try again.');

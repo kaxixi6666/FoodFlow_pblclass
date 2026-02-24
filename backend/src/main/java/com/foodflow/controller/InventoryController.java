@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
 
 @RestController
 @RequestMapping("/inventory")
@@ -304,6 +307,44 @@ public class InventoryController {
             Map<String, Object> response = new HashMap<>();
             response.put("result", result);
             response.put("scenario", scenario);
+            
+            // Convert result to frontend expected format
+            if ("fridge".equalsIgnoreCase(scenario)) {
+                // For fridge scenario, result is JSON array: ["ingredient1", "ingredient2"]
+                try {
+                    JSONArray ingredientsArray = JSON.parseArray(result);
+                    List<Map<String, Object>> detectedItems = new ArrayList<>();
+                    for (int i = 0; i < ingredientsArray.size(); i++) {
+                        Map<String, Object> item = new HashMap<>();
+                        item.put("id", i + 1);
+                        item.put("name", ingredientsArray.getString(i));
+                        detectedItems.add(item);
+                    }
+                    response.put("detectedItems", detectedItems);
+                } catch (Exception e) {
+                    System.err.println("Error parsing fridge result: " + e.getMessage());
+                    response.put("detectedItems", new ArrayList<>());
+                }
+            } else {
+                // For receipt scenario, result is JSON array: [{"name":"ingredient name","quantity":"quantity"}]
+                try {
+                    JSONArray itemsArray = JSON.parseArray(result);
+                    List<Map<String, Object>> detectedItems = new ArrayList<>();
+                    for (int i = 0; i < itemsArray.size(); i++) {
+                        JSONObject itemObj = itemsArray.getJSONObject(i);
+                        Map<String, Object> item = new HashMap<>();
+                        item.put("id", i + 1);
+                        item.put("name", itemObj.getString("name"));
+                        item.put("quantity", itemObj.getString("quantity"));
+                        detectedItems.add(item);
+                    }
+                    response.put("detectedItems", detectedItems);
+                } catch (Exception e) {
+                    System.err.println("Error parsing receipt result: " + e.getMessage());
+                    response.put("detectedItems", new ArrayList<>());
+                }
+            }
+            
             if (userId != null) {
                 response.put("userId", userId);
             }

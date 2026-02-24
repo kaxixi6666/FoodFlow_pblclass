@@ -79,10 +79,10 @@ public class ZhipuAIService {
         
         String instruction;
         if ("fridge".equalsIgnoreCase(scenario)) {
-            instruction = "Please identify all ingredient names in this refrigerator photo, ignore packaging/background, only return JSON array: [\"ingredient1\",\"ingredient2\"], no extra explanation.";
+            instruction = "请识别这张冰箱照片中的所有食材名称，忽略包装/背景，仅返回JSON数组：[\"食材1\",\"食材2\"]，无多余解释。";
         } else {
             // Default to receipt scenario
-            instruction = "Please identify all text in this receipt image (including product names, prices, dates, quantities), accurately translate to English, maintain original format, and only return translation result.";
+            instruction = "请识别这张收据图片中的所有文字，提取食材名称、数量、购买日期信息，仅返回结构化JSON数组：[{\"name\":\"食材名\",\"quantity\":\"数量\"}]，无多余解释。";
         }
         
         textContent.put("text", instruction);
