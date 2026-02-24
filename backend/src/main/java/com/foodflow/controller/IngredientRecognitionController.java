@@ -36,9 +36,9 @@ public class IngredientRecognitionController {
     @PostMapping("/image")
     public ResponseEntity<List<IngredientRecognitionService.RecognizedIngredient>> recognizeFromImage(
             @RequestParam("image") MultipartFile image) {
-        // 这里可以集成图像识别服务，获取图像描述
-        // 然后调用大语言模型进行食材识别
-        // 暂时返回空列表，实际项目中需要实现完整逻辑
+        // Image recognition service can be integrated here to get image description
+        // Then call large language model for ingredient recognition
+        // Temporarily return empty list, complete logic needs to be implemented in actual projects
         return ResponseEntity.ok(List.of());
     }
 

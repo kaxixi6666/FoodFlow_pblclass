@@ -2,12 +2,15 @@ package com.foodflow.controller;
 
 import com.foodflow.model.Ingredient;
 import com.foodflow.model.Inventory;
+import com.foodflow.service.ZhipuAIService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -23,6 +26,12 @@ public class InventoryController {
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    private final ZhipuAIService zhipuAIService;
+
+    public InventoryController(ZhipuAIService zhipuAIService) {
+        this.zhipuAIService = zhipuAIService;
+    }
 
     @PostMapping
     @Transactional
@@ -249,5 +258,67 @@ public class InventoryController {
         public void setCategory(String category) { this.category = category; }
         public String getLastUpdated() { return lastUpdated; }
         public void setLastUpdated(String lastUpdated) { this.lastUpdated = lastUpdated; }
+    }
+
+    /**
+     * Detect text from image and translate to English
+     * @param image Uploaded image file
+     * @param userId User ID
+     * @return Translated English result
+     */
+    @PostMapping("/detect")
+    public ResponseEntity<?> detectInventory(
+        @RequestParam("image") MultipartFile image,
+        @RequestHeader(value = "X-User-Id", required = false) Long userId
+    ) {
+        try {
+            // Validate image
+            if (image == null || image.isEmpty()) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Image file is required");
+                error.put("code", 400);
+                return ResponseEntity.badRequest().body(error);
+            }
+
+            // Validate image size (≤ 10MB)
+            if (image.getSize() > 10 * 1024 * 1024) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Image file size must be ≤ 10MB");
+                error.put("code", 400);
+                return ResponseEntity.badRequest().body(error);
+            }
+
+            // Get image format
+            String originalFilename = image.getOriginalFilename();
+            String imageFormat = zhipuAIService.getImageFormat(originalFilename);
+
+            // Read image data
+            byte[] imageData = image.getBytes();
+
+            // Call ZhipuAI service for recognition and translation
+            String result = zhipuAIService.detectAndTranslateImage(imageData, imageFormat);
+
+            // Return result
+            Map<String, Object> response = new HashMap<>();
+            response.put("result", result);
+            if (userId != null) {
+                response.put("userId", userId);
+            }
+            return ResponseEntity.ok(response);
+        } catch (IOException e) {
+            System.err.println("Error detecting inventory: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Failed to detect inventory: " + e.getMessage());
+            error.put("code", 500);
+            return ResponseEntity.status(500).body(error);
+        } catch (Exception e) {
+            System.err.println("Unexpected error: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Internal server error: " + e.getMessage());
+            error.put("code", 500);
+            return ResponseEntity.status(500).body(error);
+        }
     }
 }

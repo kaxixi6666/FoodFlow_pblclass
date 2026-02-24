@@ -21,12 +21,12 @@ public class IngredientRecognitionService {
     }
 
     public List<RecognizedIngredient> recognizeIngredientsFromText(String text) {
-        // 暂时返回模拟数据，后续可以集成实际的OpenAI API
+        // Temporarily return mock data, actual OpenAI API integration can be added later
         return getMockIngredients();
     }
 
     public List<RecognizedIngredient> recognizeIngredientsFromImageDescription(String imageDescription) {
-        // 暂时返回模拟数据，后续可以集成实际的OpenAI API
+        // Temporarily return mock data, actual OpenAI API integration can be added later
         return getMockIngredients();
     }
 
@@ -63,10 +63,10 @@ public class IngredientRecognitionService {
     }
 
     private List<RecognizedIngredient> parseRecognitionResponse(String response) {
-        // 简单的JSON解析，实际项目中建议使用Jackson
+        // Simple JSON parsing, Jackson is recommended for actual projects
         List<RecognizedIngredient> ingredients = new ArrayList<>();
         
-        // 提取JSON数组
+        // Extract JSON array
         Pattern jsonArrayPattern = Pattern.compile("\\[(.*?)\\]", Pattern.DOTALL);
         Matcher matcher = jsonArrayPattern.matcher(response);
         
@@ -96,7 +96,7 @@ public class IngredientRecognitionService {
                 return new RecognizedIngredient(name, category);
             }
         } catch (Exception e) {
-            // 解析错误，跳过
+            // Parse error, skip
         }
         return null;
     }

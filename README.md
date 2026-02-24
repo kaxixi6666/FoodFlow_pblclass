@@ -11,6 +11,7 @@ This is a Food Inventory Dashboard application built with React and Spring Boot.
 - Tailwind CSS 4.1.12
 - React Router 7.13.0
 - Material UI 7.3.5
+- Sonner (Toast notifications)
 
 ### Backend
 - Spring Boot 3.2.0
@@ -18,6 +19,8 @@ This is a Food Inventory Dashboard application built with React and Spring Boot.
 - PostgreSQL
 - Spring Security
 - Spring Data JPA
+- JWT Authentication
+- OpenAI GPT-4 (for ingredient recognition)
 
 ## Running the Application
 
@@ -33,8 +36,8 @@ This is a Food Inventory Dashboard application built with React and Spring Boot.
 
 2. Configure environment variables:
    ```bash
-   cp .env.example .env
-   # Edit .env and add your OpenAI API key
+   cp frontend/.env.example frontend/.env
+   # Edit frontend/.env and add your OpenAI API key
    ```
 
 3. Start all services:
@@ -52,9 +55,9 @@ For detailed Docker instructions, see [DOCKER.md](DOCKER.md).
 ### Option 2: Local Development
 
 #### Frontend
-1. Navigate to project root directory:
+1. Navigate to frontend directory:
    ```bash
-   cd FoodFlow
+   cd FoodFlow_pblclass/frontend
    ```
 
 2. Install dependencies:
@@ -69,13 +72,13 @@ For detailed Docker instructions, see [DOCKER.md](DOCKER.md).
 
 4. Access frontend at:
    ```
-   http://localhost:5173/FoodFlow/
+   http://localhost:5173
    ```
 
 #### Backend
 1. Navigate to backend directory:
    ```bash
-   cd FoodFlow/backend
+   cd FoodFlow_pblclass/backend
    ```
 
 2. Ensure PostgreSQL is running and create a database named `foodflow`
@@ -105,32 +108,89 @@ spring.datasource.driver-class-name=org.postgresql.Driver
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+# JWT Configuration
+jwt.secret=your_jwt_secret_key
+jwt.expiration=86400
 ```
 
 ## API Endpoints
 
+### Authentication
+- `POST /api/users/register` - Register a new user
+- `POST /api/users/login` - Login and get JWT token
+
 ### Inventory
-- `GET /api/inventory` - Get all inventory items
+- `GET /api/inventory` - Get all inventory items (user-specific)
 - `POST /api/inventory` - Add new inventory item
 - `PUT /api/inventory/{id}` - Update inventory item
 - `DELETE /api/inventory/{id}` - Delete inventory item
+- `POST /api/inventory/detect` - Detect and translate text from image (uses GLM-4V)
+
+**Request Parameters:**
+- `image` (MultipartFile): Image file to process (JPG/PNG/WebP, ≤ 10MB)
+
+**Response:**
+- `result` (string): Translated English text from the image
+- `userId` (number): User ID from request header
+
+**Description:**
+This endpoint uses the GLM-4V multimodal model to detect text in images (like receipts) and translate it to English. It returns only the translated text without any additional explanations.
+
+### Ingredients
+- `GET /api/ingredients` - Get all ingredients
+- `POST /api/ingredients` - Add new ingredient
+
+### Recipes
+- `GET /api/recipes` - Get all recipes (user-specific)
+- `GET /api/recipes/public` - Get all public recipes
+- `POST /api/recipes` - Add new recipe
+- `PUT /api/recipes/{id}` - Update recipe
+- `DELETE /api/recipes/{id}` - Delete recipe
 
 ### Ingredient Recognition
-- `POST /api/ingredients/recognition` - Recognize ingredients from image
+- `POST /api/ingredients/recognition/text` - Recognize ingredients from text
+- `POST /api/ingredients/recognition/image-description` - Recognize ingredients from image description
+- `POST /api/ingredients/recognition/image` - Recognize ingredients from image
+- `POST https://pbl.florentin.online/api/inventory/detect` - Recognize ingredients from receipt image (external API)
+
+### Meal Plans
+- `GET /api/meal-plans` - Get all meal plans
+- `POST /api/meal-plans` - Add new meal plan
+
+### Shopping List
+- `GET /api/shopping-list` - Get shopping list
+- `POST /api/shopping-list` - Add item to shopping list
 
 ## Project Structure
 
 ```
-FoodFlow/
+FoodFlow_pblclass/
 ├── backend/            # Spring Boot backend
 │   ├── src/            # Backend source code
+│   │   ├── main/java/com/foodflow/
+│   │   │   ├── config/       # Configuration classes
+│   │   │   ├── controller/   # REST controllers
+│   │   │   ├── model/        # JPA entities
+│   │   │   ├── service/       # Business logic
+│   │   │   └── FoodFlowApplication.java  # Main application class
+│   │   └── resources/         # Application properties
 │   └── pom.xml         # Maven configuration
-├── src/                # React frontend
-│   ├── app/            # Frontend application code
-│   ├── styles/         # CSS styles
-│   └── main.tsx        # Frontend entry point
-├── package.json        # Frontend dependencies
-├── vite.config.ts      # Vite configuration
-└── README.md           # Project documentation
+├── frontend/           # React frontend
+│   ├── src/            # Frontend source code
+│   │   ├── app/        # Frontend application code
+│   │   │   ├── components/    # React components
+│   │   │   ├── config/        # API configuration
+│   │   │   ├── pages/         # React pages
+│   │   │   ├── App.tsx        # Main App component
+│   │   │   └── routes.tsx      # React Router configuration
+│   │   ├── styles/     # CSS styles
+│   │   └── main.tsx    # Frontend entry point
+│   ├── package.json    # Frontend dependencies
+│   ├── vite.config.ts  # Vite configuration
+│   └── Dockerfile      # Frontend Dockerfile
+├── docker-compose.yml  # Docker Compose configuration
+├── README.md           # Project documentation
+└── DOCKER.md           # Docker instructions
 ```
   

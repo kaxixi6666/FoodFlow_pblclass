@@ -10,7 +10,7 @@ public class LLMConfig {
     @Value("${openai.api-key}")
     private String openAiApiKey;
 
-    // 暂时移除OpenAiService的Bean定义，因为依赖版本可能有问题
-    // 后续可以根据实际使用的OpenAI客户端库版本调整
+    // Temporarily remove OpenAiService Bean definition as dependency version may have issues
+    // Can adjust later based on actual OpenAI client library version used
 
 } 

@@ -46,7 +46,7 @@ services:
   # Frontend Service
   frontend:
     build:
-      context: .
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: foodflow-frontend
     ports:
