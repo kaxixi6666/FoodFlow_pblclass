@@ -1,37 +1,59 @@
 package com.foodflow.service;
 
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import okhttp3.*;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
 
 @Service
 public class ZhipuAIService {
-
-    private static final String API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
-    private static final String API_KEY = "5f41881a249d43ada948ef287b72f0c9.HQNZjfXnADSoFFDX"; // Replace with actual API Key
-    private static final String MODEL = "glm-4v";
-    private static final int TIMEOUT_SECONDS = 30;
-    private static final double TEMPERATURE = 0.1;
-    private static final int MAX_TOKENS = 2000;
-
+    
     private final OkHttpClient client;
-
+    
+    private static final String API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
+    private static final String API_KEY = "5f41881a249d43ada948ef287b72f0c9.HQNZjfXnADSoFFDX";
+    private static final String MODEL = "glm-4v";
+    private static final double TEMPERATURE = 0.7;
+    private static final int MAX_TOKENS = 2048;
+    
     public ZhipuAIService() {
         this.client = new OkHttpClient.Builder()
-                .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
                 .build();
     }
-
+    
+    /**
+     * Get image format from filename
+     * @param filename Image filename
+     * @return Image format (jpg, png, webp)
+     */
+    public String getImageFormat(String filename) {
+        if (filename == null || filename.isEmpty()) {
+            return "jpg";
+        }
+        
+        String lowerFilename = filename.toLowerCase();
+        if (lowerFilename.endsWith(".jpg") || lowerFilename.endsWith(".jpeg")) {
+            return "jpg";
+        } else if (lowerFilename.endsWith(".png")) {
+            return "png";
+        } else if (lowerFilename.endsWith(".webp")) {
+            return "webp";
+        } else {
+            return "jpg";
+        }
+    }
+    
     /**
      * Detect text from image and translate to English
      * @param imageData Image byte array
@@ -79,10 +101,10 @@ public class ZhipuAIService {
         
         String instruction;
         if ("fridge".equalsIgnoreCase(scenario)) {
-            instruction = "Please identify all food ingredients visible in this fridge image, ignore packaging and background.\nRules:\nReturn ONLY pure JSON array, no markdown, no ```json, no backticks, no extra words.\nFormat: [\"ingredient1\",\"ingredient2\",\"ingredient3\"]\nDo NOT add any explanation outside the JSON.";
+            instruction = "Please identify all food ingredients visible in this fridge image, ignore packaging and background.\nRules:\nReturn ONLY pure JSON array, no markdown, no ```json, no backticks, no extra words.\nFormat: [\"ingredient1\",\"ingredient2\",\"ingredient3\"]\nDo NOT add any explanation outside of JSON.";
         } else {
             // Default to receipt scenario
-            instruction = "Please identify all text in this receipt image, accurately extract food ingredient names and quantities.\nRules:\nReturn ONLY pure JSON array, no markdown, no ```json, no backticks, no extra words.\nFormat: [{\"name\":\"ingredient\",\"quantity\":\"number or unit\"}]\nDo NOT add any explanation outside the JSON.";
+            instruction = "Please identify all text in this receipt image, accurately extract food ingredient names and quantities.\nRules:\nReturn ONLY pure JSON array, no markdown, no ```json, no backticks, no extra words.\nFormat: [{\"name\":\"ingredient\",\"quantity\":\"number or unit\"}]\nDo NOT add any explanation outside of JSON.";
         }
         
         textContent.put("text", instruction);
@@ -129,37 +151,6 @@ public class ZhipuAIService {
             }
 
             throw new IOException("Failed to extract translation result from response: " + responseBody);
-        }
-    }
-
-    /**
-     * Read image data from input stream
-     * @param inputStream Input stream
-     * @return Image byte array
-     * @throws IOException
-     */
-    public byte[] readImageFromInputStream(InputStream inputStream) throws IOException {
-        return inputStream.readAllBytes();
-    }
-
-    /**
-     * Get image format
-     * @param fileName File name
-     * @return Image format
-     */
-    public String getImageFormat(String fileName) {
-        if (fileName == null) {
-            return "jpg";
-        }
-        String lowerFileName = fileName.toLowerCase();
-        if (lowerFileName.endsWith(".jpg") || lowerFileName.endsWith(".jpeg")) {
-            return "jpeg";
-        } else if (lowerFileName.endsWith(".png")) {
-            return "png";
-        } else if (lowerFileName.endsWith(".webp")) {
-            return "webp";
-        } else {
-            return "jpg";
         }
     }
 }
