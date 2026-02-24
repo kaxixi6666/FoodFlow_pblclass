@@ -2,6 +2,7 @@ package com.foodflow.controller;
 
 import com.foodflow.model.User;
 import com.foodflow.service.UserService;
+import com.foodflow.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private JwtService jwtService;
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegistrationRequest request) {
@@ -77,10 +81,12 @@ public class UserController {
     }
 
     private Map<String, Object> createSuccessResponse(User user) {
+        // Generate token for the user
+        String token = jwtService.generateToken(user.getUsername());
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("message", "User registered successfully");
-        response.put("user", createUserResponse(user));
+        response.put("user", createUserResponse(user, token));
         return response;
     }
 
@@ -91,12 +97,13 @@ public class UserController {
         return response;
     }
 
-    private Map<String, Object> createUserResponse(User user) {
+    private Map<String, Object> createUserResponse(User user, String token) {
         Map<String, Object> userResponse = new HashMap<>();
         userResponse.put("id", user.getId());
         userResponse.put("username", user.getUsername());
         userResponse.put("email", user.getEmail());
         userResponse.put("createdAt", user.getCreatedAt());
+        userResponse.put("token", token);
         return userResponse;
     }
 
