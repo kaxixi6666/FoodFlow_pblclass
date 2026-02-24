@@ -104,7 +104,7 @@ public class ZhipuAIService {
             instruction = "Please identify all food ingredients visible in this fridge image, ignore packaging and background.\nRules:\nReturn ONLY pure JSON array, no markdown, no ```json, no backticks, no extra words.\nFormat: [\"ingredient1\",\"ingredient2\",\"ingredient3\"]\nDo NOT add any explanation outside of JSON.";
         } else {
             // Default to receipt scenario
-            instruction = "Please identify all text in this receipt image, accurately extract food ingredient names and quantities.\nRules:\n1. Translate all ingredient names to English\n2. Return ONLY pure JSON array, no markdown, no ```json, no backticks, no extra words\n3. Format: [{\"name\":\"ingredient\",\"quantity\":\"number or unit\"}]\n4. Do NOT add any explanation outside of JSON\n5. All ingredient names must be in English";
+            instruction = "Please identify all food ingredients in this receipt image.\nRules:\n1. Translate all ingredient names to English\n2. Return ONLY pure JSON array, no markdown, no ```json, no backticks, no extra words\n3. Format: [\"ingredient1\",\"ingredient2\",\"ingredient3\"]\n4. Do NOT add any explanation outside of JSON\n5. All ingredient names must be in English\n6. Do NOT include quantities, only ingredient names";
         }
         
         textContent.put("text", instruction);

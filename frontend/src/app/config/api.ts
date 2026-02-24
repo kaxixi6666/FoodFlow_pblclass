@@ -100,7 +100,7 @@ export const analyzeImageWithZhipuAI = async (imageBase64: string, scenario: str
   // Build prompt based on scenario
   const prompt = scenario === 'fridge'
     ? 'Please identify all food ingredients visible in this fridge image, ignore packaging and background.\nRules:\nReturn ONLY pure JSON array, no markdown, no ```json, no backticks, no extra words.\nFormat: ["ingredient1","ingredient2","ingredient3"]\nDo NOT add any explanation outside of JSON.'
-    : 'Please identify all text in this receipt image, accurately extract food ingredient names and quantities.\nRules:\n1. Translate all ingredient names to English\n2. Return ONLY pure JSON array, no markdown, no ```json, no backticks, no extra words\n3. Format: [{"name":"ingredient","quantity":"number or unit"}]\n4. Do NOT add any explanation outside of JSON\n5. All ingredient names must be in English';
+    : 'Please identify all food ingredients in this receipt image.\nRules:\n1. Translate all ingredient names to English\n2. Return ONLY pure JSON array, no markdown, no ```json, no backticks, no extra words\n3. Format: ["ingredient1","ingredient2","ingredient3"]\n4. Do NOT add any explanation outside of JSON\n5. All ingredient names must be in English\n6. Do NOT include quantities, only ingredient names';
   
   // Build request body
   const requestBody = {
@@ -192,24 +192,13 @@ export const analyzeImageWithZhipuAI = async (imageBase64: string, scenario: str
       
       // Parse content based on scenario
       try {
-        if (scenario === 'fridge') {
-          // For fridge scenario, expect JSON array: ["ingredient1", "ingredient2"]
-          const ingredients = JSON.parse(content);
-          const detectedItems = ingredients.map((name: string, index: number) => ({
-            id: index + 1,
-            name: name
-          }));
-          return { detectedItems, scenario };
-        } else {
-          // For receipt scenario, expect JSON array: [{"name":"ingredient name","quantity":"quantity"}]
-          const items = JSON.parse(content);
-          const detectedItems = items.map((item: any, index: number) => ({
-            id: index + 1,
-            name: item.name,
-            quantity: item.quantity
-          }));
-          return { detectedItems, scenario };
-        }
+        // Both scenarios now return the same format: ["ingredient1", "ingredient2"]
+        const ingredients = JSON.parse(content);
+        const detectedItems = ingredients.map((name: string, index: number) => ({
+          id: index + 1,
+          name: name
+        }));
+        return { detectedItems, scenario };
       } catch (parseError) {
         console.error('analyzeImageWithZhipuAI - parse error:', parseError);
         console.error('analyzeImageWithZhipuAI - content that failed to parse:', content);
