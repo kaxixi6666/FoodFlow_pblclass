@@ -94,6 +94,19 @@ export function Inventory() {
     setInventory(inventory.map(item => ({ ...item, selected: false })));
   };
 
+  const deleteItem = async (id: number) => {
+    try {
+      await fetchAPI(`${API_ENDPOINTS.INVENTORY}/${id}`, {
+        method: 'DELETE'
+      });
+      
+      setInventory(inventory.filter(item => item.id !== id));
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      alert('Failed to delete item. Please try again.');
+    }
+  };
+
   // Filter and sort
   let filteredInventory = inventory.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -234,7 +247,7 @@ export function Inventory() {
                 <TableCell>{item.lastUpdated}</TableCell>
                 <TableCell>
                   <Button
-                    onClick={() => toggleSelect(item.id)}
+                    onClick={() => deleteItem(item.id)}
                     variant="ghost"
                     size="icon"
                     className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
