@@ -1,7 +1,7 @@
 import { Plus, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router";
-import { API_ENDPOINTS } from "../config/api";
+import { API_ENDPOINTS, fetchAPI } from "../config/api";
 import { useAuth } from "../components/AuthProvider";
 
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -48,12 +48,11 @@ export function Planning() {
 
   const fetchMealPlans = async () => {
     try {
-      let url = API_ENDPOINTS.MEAL_PLANS;
+      let endpoint = API_ENDPOINTS.MEAL_PLANS;
       if (user?.id) {
-        url += `?userId=${user.id}`;
+        endpoint += `?userId=${user.id}`;
       }
-      const response = await fetch(url);
-      const data = await response.json();
+      const data = await fetchAPI(endpoint);
       setMealPlans(data);
     } catch (error) {
       console.error('Error fetching meal plans:', error);
@@ -100,19 +99,10 @@ export function Planning() {
         recipe: pendingRecipe
       };
 
-      const response = await fetch(API_ENDPOINTS.MEAL_PLANS, {
+      const savedMealPlan = await fetchAPI(API_ENDPOINTS.MEAL_PLANS, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify(mealPlanData)
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to add meal plan');
-      }
-
-      const savedMealPlan = await response.json();
       setMealPlans([...mealPlans, savedMealPlan]);
       setPendingRecipe(null);
       setShowMealTypeModal(false);
@@ -125,13 +115,9 @@ export function Planning() {
 
   const handleRemoveMealPlan = async (mealPlanId: number) => {
     try {
-      const response = await fetch(`${API_ENDPOINTS.MEAL_PLANS}/${mealPlanId}`, {
+      await fetchAPI(`${API_ENDPOINTS.MEAL_PLANS}/${mealPlanId}`, {
         method: 'DELETE'
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to remove meal plan');
-      }
 
       setMealPlans(mealPlans.filter((plan) => plan.id !== mealPlanId));
     } catch (error) {
