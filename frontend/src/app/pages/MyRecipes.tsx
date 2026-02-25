@@ -21,6 +21,7 @@ interface Recipe {
   servings?: number;
   instructions?: string;
   note?: string;
+  likeCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -61,6 +62,8 @@ export function MyRecipes() {
   const [detailSelectedIngredients, setDetailSelectedIngredients] = useState<string[]>([]);
   const [detailStatus, setDetailStatus] = useState<"draft" | "public">("draft");
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
+  const [likedRecipes, setLikedRecipes] = useState<Set<number>>(new Set());
+  const [likeCounts, setLikeCounts] = useState<Record<number, number>>({});
 
   useEffect(() => {
     const fetchRecipes = async () => {
@@ -116,6 +119,49 @@ export function MyRecipes() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showMenu]);
+
+  // Fetch like status and like counts for each recipe
+  useEffect(() => {
+    const fetchLikeStatus = async () => {
+      try {
+        const userStr = localStorage.getItem('user');
+        const user = userStr ? JSON.parse(userStr) : null;
+        
+        if (!user) {
+          return;
+        }
+
+        const likedSet = new Set<number>();
+        const counts: Record<number, number> = {};
+
+        for (const recipe of myRecipes) {
+          if (recipe.status === 'public') {
+            // Fetch like status
+            try {
+              const status = await fetchAPI(`${API_ENDPOINTS.NOTES}/${recipe.id}/like/status`);
+              if (status && status.hasLiked) {
+                likedSet.add(recipe.id);
+              }
+            } catch (error) {
+              console.error(`Error fetching like status for recipe ${recipe.id}:`, error);
+            }
+
+            // Set like count
+            counts[recipe.id] = recipe.likeCount || 0;
+          }
+        }
+
+        setLikedRecipes(likedSet);
+        setLikeCounts(counts);
+      } catch (error) {
+        console.error('Error fetching like status:', error);
+      }
+    };
+
+    if (myRecipes.length > 0) {
+      fetchLikeStatus();
+    }
+  }, [myRecipes]);
 
   const toggleIngredient = (ingredient: string) => {
     setSelectedIngredients(prev =>
@@ -642,6 +688,152 @@ export function MyRecipes() {
     }
   };
 
+  // Handle like recipe
+  const handleLikeRecipe = async (recipe: Recipe) => {
+    try {
+      const userStr = localStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
+      
+      if (!user) {
+        alert('Please login to like recipes');
+        navigate('/login');
+        return;
+      }
+
+      // Check if recipe is public
+      if (recipe.status !== 'public') {
+        alert('Cannot like private recipes');
+        return;
+      }
+
+      // Check if user is the author
+      if (recipe.userId === user.id) {
+        alert('Cannot like your own recipe');
+        return;
+      }
+
+      // Optimistic update
+      setLikedRecipes(prev => new Set(prev).add(recipe.id));
+      setLikeCounts(prev => ({
+        ...prev,
+        [recipe.id]: (prev[recipe.id] || 0) + 1
+      }));
+
+      // Call API
+      await fetchAPI(`${API_ENDPOINTS.NOTES}/${recipe.id}/like`, {
+        method: 'POST'
+      });
+
+      // Refresh recipes to get updated like count
+      const fetchRecipes = async () => {
+        try {
+          const data = await fetchAPI(API_ENDPOINTS.RECIPES);
+          
+          const draftRecipes = data
+            .filter((recipe: Recipe) => recipe.status === 'draft')
+            .sort((a: Recipe, b: Recipe) => {
+              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return dateB - dateA;
+            });
+          const publicRecipesList = data
+            .filter((recipe: Recipe) => recipe.status === 'public')
+            .sort((a: Recipe, b: Recipe) => {
+              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return dateB - dateA;
+            });
+          setMyRecipes([...draftRecipes, ...publicRecipesList]);
+        } catch (error) {
+          console.error('Error fetching recipes:', error);
+        }
+      };
+      
+      fetchRecipes();
+    } catch (error) {
+      console.error('Error liking recipe:', error);
+      // Rollback optimistic update
+      setLikedRecipes(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(recipe.id);
+        return newSet;
+      });
+      setLikeCounts(prev => ({
+        ...prev,
+        [recipe.id]: Math.max(0, (prev[recipe.id] || 0) - 1)
+      }));
+      const errorMessage = error instanceof Error ? error.message : 'Failed to like recipe. Please try again.';
+      alert(errorMessage);
+    }
+  };
+
+  // Handle unlike recipe
+  const handleUnlikeRecipe = async (recipe: Recipe) => {
+    try {
+      const userStr = localStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
+      
+      if (!user) {
+        alert('Please login to unlike recipes');
+        navigate('/login');
+        return;
+      }
+
+      // Optimistic update
+      setLikedRecipes(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(recipe.id);
+        return newSet;
+      });
+      setLikeCounts(prev => ({
+        ...prev,
+        [recipe.id]: Math.max(0, (prev[recipe.id] || 0) - 1)
+      }));
+
+      // Call API
+      await fetchAPI(`${API_ENDPOINTS.NOTES}/${recipe.id}/like`, {
+        method: 'DELETE'
+      });
+
+      // Refresh recipes to get updated like count
+      const fetchRecipes = async () => {
+        try {
+          const data = await fetchAPI(API_ENDPOINTS.RECIPES);
+          
+          const draftRecipes = data
+            .filter((recipe: Recipe) => recipe.status === 'draft')
+            .sort((a: Recipe, b: Recipe) => {
+              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return dateB - dateA;
+            });
+          const publicRecipesList = data
+            .filter((recipe: Recipe) => recipe.status === 'public')
+            .sort((a: Recipe, b: Recipe) => {
+              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return dateB - dateA;
+            });
+          setMyRecipes([...draftRecipes, ...publicRecipesList]);
+        } catch (error) {
+          console.error('Error fetching recipes:', error);
+        }
+      };
+      
+      fetchRecipes();
+    } catch (error) {
+      console.error('Error unliking recipe:', error);
+      // Rollback optimistic update
+      setLikedRecipes(prev => new Set(prev).add(recipe.id));
+      setLikeCounts(prev => ({
+        ...prev,
+        [recipe.id]: (prev[recipe.id] || 0) + 1
+      }));
+      const errorMessage = error instanceof Error ? error.message : 'Failed to unlike recipe. Please try again.';
+      alert(errorMessage);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Create Recipe Section (Collapsible) */}
@@ -851,6 +1043,42 @@ export function MyRecipes() {
                         <span>Servings: {recipe.servings || 0}</span>
                       </div>
                     </div>
+                    {recipe.status === 'public' && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (likedRecipes.has(recipe.id)) {
+                              handleUnlikeRecipe(recipe);
+                            } else {
+                              handleLikeRecipe(recipe);
+                            }
+                          }}
+                          className={`flex items-center gap-1 p-2 rounded-full transition-colors ${
+                            likedRecipes.has(recipe.id)
+                              ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill={likedRecipes.has(recipe.id) ? 'currentColor' : 'none'}
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                          </svg>
+                          <span className="text-sm">
+                            {likeCounts[recipe.id] || recipe.likeCount || 0}
+                          </span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

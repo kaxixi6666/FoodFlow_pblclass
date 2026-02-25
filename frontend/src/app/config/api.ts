@@ -13,6 +13,8 @@ export const API_ENDPOINTS = {
   USERS: `${API_BASE_URL}/users`,
   MEAL_PLANS: `${API_BASE_URL}/meal-plans`,
   SHOPPING_LIST: `${API_BASE_URL}/shopping-list`,
+  NOTES: `${API_BASE_URL}/notes`,
+  NOTIFICATIONS: `${API_BASE_URL}/notifications`,
 };
 
 export const fetchAPI = async (endpoint: string, options?: RequestInit) => {
