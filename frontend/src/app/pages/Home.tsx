@@ -98,12 +98,23 @@ export function Home() {
       console.log('Detected ingredients response:', response);
       
       // Parse response to get detected items
-      const detectedItems = response.detectedItems || [];
+      // Support both scannedItems (string array) and detectedItems (object array)
+      let detectedItems = [];
+      if (response.scannedItems) {
+        // Handle string array format from backend
+        detectedItems = response.scannedItems.map((item: string, index: number) => ({
+          id: index + 1,
+          name: item
+        }));
+      } else if (response.detectedItems) {
+        // Handle object array format
+        detectedItems = response.detectedItems;
+      }
       
       // Convert detected items to our format
       const mockIngredients: DetectedIngredient[] = detectedItems.map((item: any, index: number) => ({
         id: item.id || index + 1,
-        name: item.name,
+        name: item.name || item,
         status: "matched" as const,
         editing: false
       }));
