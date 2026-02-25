@@ -1,29 +1,17 @@
-import { createHashRouter } from "react-router";
-import { lazy, Suspense } from "react";
+import { createHashRouter } from "react-router-dom";
 import { DashboardLayout } from "./components/DashboardLayout";
 import { Login } from "./pages/Login";
+import { Home } from "./pages/Home";
+import { Inventory } from "./pages/Inventory";
+import { MyRecipes } from "./pages/MyRecipes";
+import { PublicRecipes } from "./pages/PublicRecipes";
+import { Planning } from "./pages/Planning";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-
-// Lazy load components
-const Home = lazy(() => import("./pages/Home"));
-const Inventory = lazy(() => import("./pages/Inventory"));
-const MyRecipes = lazy(() => import("./pages/MyRecipes"));
-const PublicRecipes = lazy(() => import("./pages/PublicRecipes"));
-const Planning = lazy(() => import("./pages/Planning"));
-
-// Loading component
-const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="text-lg">Loading...</div>
-  </div>
-);
 
 // Suspense wrapper for protected routes
 const SuspenseProtectedRoute = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>
-    <Suspense fallback={<PageLoader />}>
-      {children}
-    </Suspense>
+    {children}
   </ProtectedRoute>
 );
 
@@ -47,43 +35,23 @@ export const router = createHashRouter([
     children: [
       { 
         index: true, 
-        Component: () => (
-          <Suspense fallback={<PageLoader />}>
-            <Home />
-          </Suspense>
-        ) 
+        Component: Home,
       },
       { 
         path: "inventory", 
-        Component: () => (
-          <Suspense fallback={<PageLoader />}>
-            <Inventory />
-          </Suspense>
-        ) 
+        Component: Inventory,
       },
       { 
         path: "my-recipes", 
-        Component: () => (
-          <Suspense fallback={<PageLoader />}>
-            <MyRecipes />
-          </Suspense>
-        ) 
+        Component: MyRecipes,
       },
       { 
         path: "public-recipes", 
-        Component: () => (
-          <Suspense fallback={<PageLoader />}>
-            <PublicRecipes />
-          </Suspense>
-        ) 
+        Component: PublicRecipes,
       },
       { 
         path: "planning", 
-        Component: () => (
-          <Suspense fallback={<PageLoader />}>
-            <Planning />
-          </Suspense>
-        ) 
+        Component: Planning,
       },
     ],
   },
