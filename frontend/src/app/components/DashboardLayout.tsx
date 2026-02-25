@@ -1,7 +1,8 @@
-import { Outlet, NavLink, useLocation } from "react-router-dom";
-import { Home, Package, BookOpen, Filter, Calendar, ChevronLeft, ChevronRight, Search, Settings, Bell, LogOut } from "lucide-react";
+import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Home, Package, BookOpen, Filter, Calendar, ChevronLeft, ChevronRight, Search, Settings, Bell, LogOut, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "./AuthProvider";
+import { API_ENDPOINTS, apiClient } from "../config/api";
 
 const navItems = [
   { to: "/", label: "Home", icon: Home },
@@ -24,7 +25,11 @@ export function DashboardLayout() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const location = useLocation();
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const pageTitle = pageTitles[location.pathname] || "Dashboard";
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     // Update time every second
@@ -55,6 +60,73 @@ export function DashboardLayout() {
   const getUserInitials = (name?: string) => {
     if (!name) return "U";
     return name.charAt(0).toUpperCase();
+  };
+
+  // Fetch notifications
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const data = await apiClient.get(API_ENDPOINTS.NOTIFICATIONS);
+        setNotifications(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
+    };
+
+    const fetchUnreadCount = async () => {
+      try {
+        const count: any = await apiClient.get(`${API_ENDPOINTS.NOTIFICATIONS}/count`);
+        setUnreadCount(count || 0);
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      }
+    };
+
+    fetchNotifications();
+    fetchUnreadCount();
+
+    // Poll for new notifications every 30 seconds
+    const interval = setInterval(() => {
+      fetchNotifications();
+      fetchUnreadCount();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Mark notification as read and navigate to recipe
+  const handleNotificationClick = async (notification: any) => {
+    try {
+      await apiClient.post(API_ENDPOINTS.NOTIFICATIONS_READ(notification.id));
+      setNotifications(prev => prev.map(n => 
+        n.id === notification.id ? { ...n, isRead: true } : n
+      ));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      setShowNotifications(false);
+      
+      // Navigate to recipe detail if recipeId exists
+      if (notification.recipeId) {
+        navigate('/my-recipes');
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  // Format notification time
+  const formatNotificationTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
   };
 
   return (
@@ -141,10 +213,78 @@ export function DashboardLayout() {
 
           {/* Right Side - Notifications, Settings, Profile */}
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">
-              <Bell className="w-5 h-5 text-gray-600" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative"
+              >
+                <Bell className="w-5 h-5 text-gray-600" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+              
+              {/* Notifications Dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
+                  <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900">Notifications</h3>
+                    {unreadCount > 0 && (
+                      <button 
+                        onClick={async () => {
+                          try {
+                            await apiClient.post(API_ENDPOINTS.NOTIFICATIONS_READ_ALL);
+                            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+                            setUnreadCount(0);
+                          } catch (error) {
+                            console.error('Error marking all as read:', error);
+                          }
+                        }}
+                        className="text-xs text-primary hover:text-primary/80"
+                      >
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+                  
+                  {notifications.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500">
+                      No notifications
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-100">
+                      {notifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          onClick={() => handleNotificationClick(notification)}
+                          className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                            !notification.isRead ? 'bg-blue-50' : ''
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                              !notification.isRead ? 'bg-blue-500' : 'bg-gray-300'
+                            }`}></div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm ${
+                                !notification.isRead ? 'font-medium text-gray-900' : 'text-gray-700'
+                              }`}>
+                                {notification.message}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {formatNotificationTime(notification.createdAt)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <Settings className="w-5 h-5 text-gray-600" />
             </button>

@@ -2,6 +2,9 @@ package com.foodflow.controller;
 
 import com.foodflow.model.Ingredient;
 import com.foodflow.model.Recipe;
+import com.foodflow.model.RecipeLike;
+import com.foodflow.model.Notification;
+import com.foodflow.model.User;
 import com.foodflow.service.RecipeDataGenerator;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -317,5 +320,104 @@ public class RecipeController {
         
         entityManager.remove(recipe);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/like")
+    @Transactional
+    public ResponseEntity<?> likeRecipe(
+        @PathVariable Long id,
+        @RequestHeader("X-User-Id") Long userId
+    ) {
+        try {
+            if (userId == null) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            // Fetch recipe
+            Recipe recipe = entityManager.find(Recipe.class, id);
+            if (recipe == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Check if user has already liked this recipe
+            List<RecipeLike> existingLikes = entityManager.createQuery(
+                "SELECT rl FROM RecipeLike rl WHERE rl.userId = :userId AND rl.recipeId = :recipeId", RecipeLike.class)
+                .setParameter("userId", userId)
+                .setParameter("recipeId", id)
+                .getResultList();
+
+            if (existingLikes.isEmpty()) {
+                // User has not liked this recipe yet - perform like action
+                System.out.println("User " + userId + " liking recipe " + id);
+
+                // Create recipe like record
+                RecipeLike recipeLike = new RecipeLike();
+                recipeLike.setUserId(userId);
+                recipeLike.setRecipeId(id);
+                entityManager.persist(recipeLike);
+
+                // Increment like count (only on first like)
+                recipe.setLikeCount((recipe.getLikeCount() != null ? recipe.getLikeCount() : 0) + 1);
+                entityManager.merge(recipe);
+
+                // Create notification for recipe author (only on first like)
+                if (recipe.getUserId() != null && !recipe.getUserId().equals(userId)) {
+                    User author = entityManager.find(User.class, recipe.getUserId());
+                    if (author != null) {
+                        User liker = entityManager.find(User.class, userId);
+                        String likerName = liker != null ? liker.getUsername() : "Someone";
+                        
+                        Notification notification = new Notification();
+                        notification.setUserId(recipe.getUserId());
+                        notification.setMessage(likerName + " liked your recipe '" + recipe.getName() + "'.");
+                        notification.setRecipeId(id);
+                        notification.setIsRead(false);
+                        entityManager.persist(notification);
+                        
+                        System.out.println("Created notification for user " + recipe.getUserId());
+                    }
+                }
+
+                return ResponseEntity.ok(new LikeResponse(true, recipe.getLikeCount()));
+            } else {
+                // User has already liked this recipe - perform unlike action
+                System.out.println("User " + userId + " unliking recipe " + id);
+
+                // Delete recipe like record
+                entityManager.createQuery(
+                    "DELETE FROM RecipeLike rl WHERE rl.userId = :userId AND rl.recipeId = :recipeId")
+                    .setParameter("userId", userId)
+                    .setParameter("recipeId", id)
+                    .executeUpdate();
+
+                // Do NOT decrement like count (as per requirements)
+                // Do NOT delete any notifications
+
+                return ResponseEntity.ok(new LikeResponse(false, recipe.getLikeCount()));
+            }
+        } catch (Exception e) {
+            System.err.println("Error liking/unliking recipe: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    // Response class for like endpoint
+    private static class LikeResponse {
+        private boolean liked;
+        private int likeCount;
+
+        public LikeResponse(boolean liked, int likeCount) {
+            this.liked = liked;
+            this.likeCount = likeCount;
+        }
+
+        public boolean isLiked() {
+            return liked;
+        }
+
+        public int getLikeCount() {
+            return likeCount;
+        }
     }
 }

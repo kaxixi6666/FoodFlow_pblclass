@@ -1,10 +1,10 @@
-import { Search, Plus, Clock, Users, ChefHat, ChevronDown, ChevronUp, MoreVertical, PlusCircle, X, Clock3, Users2 } from "lucide-react";
+import { Search, Plus, Clock, Users, ChefHat, ChevronDown, ChevronUp, MoreVertical, PlusCircle, X, Clock3, Users2, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { Button } from "../components/ui/button";
-import { API_ENDPOINTS, fetchAPI, fetchAPIWithResponse } from "../config/api";
+import { API_ENDPOINTS, fetchAPI, fetchAPIWithResponse, apiClient } from "../config/api";
 
 interface Ingredient {
   id: number;
@@ -21,6 +21,7 @@ interface Recipe {
   servings?: number;
   instructions?: string;
   note?: string;
+  likeCount?: number;
   createdAt?: string;
   updatedAt?: string;
   userId?: number;
@@ -48,6 +49,7 @@ export function PublicRecipes() {
   const [detailCookTime, setDetailCookTime] = useState("");
   const [detailNote, setDetailNote] = useState("");
   const [detailSelectedIngredients, setDetailSelectedIngredients] = useState<string[]>([]);
+  const [likedRecipes, setLikedRecipes] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     const fetchRecipes = async () => {
@@ -222,6 +224,35 @@ export function PublicRecipes() {
     }
   };
 
+  const handleLike = async (e: React.MouseEvent, recipeId: number) => {
+    e.stopPropagation();
+    try {
+      const response: any = await apiClient.post(API_ENDPOINTS.RECIPES_LIKE(recipeId));
+      
+      // Update liked recipes state
+      setLikedRecipes(prev => {
+        const newLiked = new Set(prev);
+        if (response.liked) {
+          newLiked.add(recipeId);
+        } else {
+          newLiked.delete(recipeId);
+        }
+        return newLiked;
+      });
+
+      // Update recipe like count (only increment on like, not decrement on unlike)
+      if (response.liked) {
+        setPublicRecipes(prev => prev.map(recipe => 
+          recipe.id === recipeId 
+            ? { ...recipe, likeCount: response.likeCount }
+            : recipe
+        ));
+      }
+    } catch (error) {
+      console.error('Error liking recipe:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Public Recipes Grid */}
@@ -285,13 +316,27 @@ export function PublicRecipes() {
 
 
 
-                  <div className="mt-6">
+                  <div className="mt-6 flex gap-2">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLike(e, recipe.id);
+                      }}
+                      className={`flex-1 py-2 border-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                        likedRecipes.has(recipe.id)
+                          ? "border-red-500 text-red-500 bg-red-50"
+                          : "border-gray-200 text-gray-400 hover:border-red-300 hover:text-red-400"
+                      }`}
+                    >
+                      <Heart className={`w-4 h-4 ${likedRecipes.has(recipe.id) ? "fill-current" : ""}`} />
+                      <span>{recipe.likeCount || 0}</span>
+                    </button>
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate('/planning', { state: { recipeToAdd: recipe } });
                       }}
-                      className="w-full py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+                      className="flex-1 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                     >
                       <PlusCircle className="w-4 h-4" />
                       Add to Plan
