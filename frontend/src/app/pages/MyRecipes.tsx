@@ -59,6 +59,7 @@ export function MyRecipes() {
   const [detailCookTime, setDetailCookTime] = useState("");
   const [detailNote, setDetailNote] = useState("");
   const [detailSelectedIngredients, setDetailSelectedIngredients] = useState<string[]>([]);
+  const [detailStatus, setDetailStatus] = useState<"draft" | "public">("draft");
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
 
   useEffect(() => {
@@ -379,6 +380,7 @@ export function MyRecipes() {
       setDetailPrepTime(recipe.prepTime?.replace(" min", "") || "");
       setDetailCookTime(recipe.cookTime?.replace(" min", "") || "");
       setDetailNote(recipe.note || "");
+      setDetailStatus(recipe.status as "draft" | "public");
       setSelectedRecipe(recipe);
       setShowDetail(true);
     }, 100);
@@ -470,7 +472,7 @@ export function MyRecipes() {
       
       const recipeData = {
         name: detailRecipeName.trim(),
-        status: editingDetailRecipe.status,
+        status: detailStatus,
         prepTime: detailPrepTime ? `${detailPrepTime} min` : undefined,
         cookTime: detailCookTime ? `${detailCookTime} min` : undefined,
         servings: detailServings ? parseInt(detailServings) : undefined,
@@ -919,6 +921,19 @@ export function MyRecipes() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                       placeholder="Enter recipe name"
                     />
+                  </div>
+
+                  {/* Recipe Status */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Recipe Status</label>
+                    <select
+                      value={detailStatus}
+                      onChange={(e) => setDetailStatus(e.target.value as "draft" | "public")}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="draft">Draft (Private)</option>
+                      <option value="public">Public</option>
+                    </select>
                   </div>
 
                   {/* Meta Info */}
