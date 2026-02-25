@@ -98,17 +98,51 @@ export function Home() {
       console.log('Detected ingredients response:', response);
       
       // Parse response to get detected items
-      // Support both scannedItems (string array) and detectedItems (object array)
       let detectedItems = [];
-      if (response.scannedItems) {
-        // Handle string array format from backend
-        detectedItems = response.scannedItems.map((item: string, index: number) => ({
-          id: index + 1,
-          name: item
-        }));
-      } else if (response.detectedItems) {
-        // Handle object array format
-        detectedItems = response.detectedItems;
+      
+      try {
+        if (response.scannedItems) {
+          // Handle string array format from backend
+          detectedItems = response.scannedItems.map((item: string, index: number) => ({
+            id: index + 1,
+            name: item
+          }));
+        } else if (response.detectedItems) {
+          // Handle object with result field (AI response with markdown)
+          if (response.detectedItems.result) {
+            const rawResult = response.detectedItems.result;
+            console.log('Raw AI result:', rawResult);
+            
+            // Remove markdown code block markers
+            const cleanResult = rawResult
+              .replace(/```json/g, '')
+              .replace(/```/g, '')
+              .trim();
+            
+            console.log('Cleaned result:', cleanResult);
+            
+            // Parse JSON string
+            const parsedResult = JSON.parse(cleanResult);
+            console.log('Parsed result:', parsedResult);
+            
+            // Ensure it's an array
+            if (Array.isArray(parsedResult)) {
+              detectedItems = parsedResult.map((item: string, index: number) => ({
+                id: index + 1,
+                name: item
+              }));
+            } else {
+              console.error('Parsed result is not an array:', parsedResult);
+            }
+          } else if (Array.isArray(response.detectedItems)) {
+            // Handle direct array format
+            detectedItems = response.detectedItems;
+          }
+        }
+      } catch (parseError) {
+        console.error('Error parsing AI response:', parseError);
+        toast.error('Failed to parse detected ingredients. Please try again.');
+        throw parseError;
       }
       
       // Convert detected items to our format
