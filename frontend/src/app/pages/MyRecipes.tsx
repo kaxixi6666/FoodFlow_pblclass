@@ -841,13 +841,19 @@ export function MyRecipes() {
                       {recipe.prepTime && (
                         <div className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
-                          <span>{recipe.prepTime}</span>
+                          <span>Prep: {recipe.prepTime}</span>
+                        </div>
+                      )}
+                      {recipe.cookTime && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          <span>Cook: {recipe.cookTime}</span>
                         </div>
                       )}
                       {recipe.servings && (
                         <div className="flex items-center gap-1">
                           <Users className="w-4 h-4" />
-                          <span>{recipe.servings}</span>
+                          <span>Servings: {recipe.servings}</span>
                         </div>
                       )}
                     </div>
