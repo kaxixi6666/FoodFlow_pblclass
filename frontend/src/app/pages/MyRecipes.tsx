@@ -838,24 +838,18 @@ export function MyRecipes() {
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 text-sm text-gray-600">
-                      {recipe.prepTime && (
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          <span>Prep: {recipe.prepTime}</span>
-                        </div>
-                      )}
-                      {recipe.cookTime && (
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          <span>Cook: {recipe.cookTime}</span>
-                        </div>
-                      )}
-                      {recipe.servings && (
-                        <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          <span>Servings: {recipe.servings}</span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        <span>Prep: {recipe.prepTime || 0}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        <span>Cook: {recipe.cookTime || 0}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Users className="w-4 h-4" />
+                        <span>Servings: {recipe.servings || 0}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
