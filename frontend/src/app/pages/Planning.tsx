@@ -2,6 +2,7 @@ import { Plus, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router";
 import { API_ENDPOINTS } from "../config/api";
+import { useAuth } from "../components/AuthProvider";
 
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -28,6 +29,7 @@ interface MealPlan {
 
 export function Planning() {
   const location = useLocation();
+  const { user } = useAuth();
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(new Date());
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
   const [pendingRecipe, setPendingRecipe] = useState<Recipe | null>(null);
@@ -42,11 +44,15 @@ export function Planning() {
 
   useEffect(() => {
     fetchMealPlans();
-  }, [currentWeekStart]);
+  }, [currentWeekStart, user?.id]);
 
   const fetchMealPlans = async () => {
     try {
-      const response = await fetch(API_ENDPOINTS.MEAL_PLANS);
+      let url = API_ENDPOINTS.MEAL_PLANS;
+      if (user?.id) {
+        url += `?userId=${user.id}`;
+      }
+      const response = await fetch(url);
       const data = await response.json();
       setMealPlans(data);
     } catch (error) {

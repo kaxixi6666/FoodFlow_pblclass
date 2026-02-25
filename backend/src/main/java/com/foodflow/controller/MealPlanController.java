@@ -20,10 +20,20 @@ public class MealPlanController {
     private EntityManager entityManager;
 
     @GetMapping
-    public ResponseEntity<List<MealPlan>> getAllMealPlans() {
-        List<MealPlan> mealPlans = entityManager.createQuery(
-                "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe", MealPlan.class)
-                .getResultList();
+    public ResponseEntity<List<MealPlan>> getAllMealPlans(@RequestParam(required = false) Long userId) {
+        List<MealPlan> mealPlans;
+        
+        if (userId != null) {
+            mealPlans = entityManager.createQuery(
+                    "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe WHERE mp.recipe.userId = :userId", MealPlan.class)
+                    .setParameter("userId", userId)
+                    .getResultList();
+        } else {
+            mealPlans = entityManager.createQuery(
+                    "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe", MealPlan.class)
+                    .getResultList();
+        }
+        
         return ResponseEntity.ok(mealPlans);
     }
 
