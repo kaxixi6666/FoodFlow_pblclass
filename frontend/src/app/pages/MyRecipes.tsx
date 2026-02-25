@@ -609,15 +609,15 @@ export function MyRecipes() {
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
-                        <span>Prep: {recipe.prepTime || 0}</span>
+                        <span>{recipe.prepTime || 0}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
-                        <span>Cook: {recipe.cookTime || 0}</span>
+                        <span>{recipe.cookTime || 0}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Users className="w-4 h-4" />
-                        <span>Servings: {recipe.servings || 0}</span>
+                        <span>{recipe.servings || 0}</span>
                       </div>
                     </div>
                   </div>
@@ -805,19 +805,19 @@ export function MyRecipes() {
                       {selectedRecipe.prepTime && (
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Clock3 className="w-4 h-4" />
-                          <span>Prep: {selectedRecipe.prepTime}</span>
+                          <span>{selectedRecipe.prepTime}</span>
                         </div>
                       )}
                       {selectedRecipe.cookTime && (
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Clock className="w-4 h-4" />
-                          <span>Cook: {selectedRecipe.cookTime}</span>
+                          <span>{selectedRecipe.cookTime}</span>
                         </div>
                       )}
                       {selectedRecipe.servings && (
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Users2 className="w-4 h-4" />
-                          <span>Servings: {selectedRecipe.servings}</span>
+                          <span>{selectedRecipe.servings}</span>
                         </div>
                       )}
                     </div>

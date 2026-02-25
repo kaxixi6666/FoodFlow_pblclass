@@ -1,5 +1,8 @@
-// Export API client from axiosInstance.ts
-export { apiClient, API_ENDPOINTS } from './axiosInstance';
+// Import API client from axiosInstance.ts
+import { apiClient, API_ENDPOINTS } from './axiosInstance';
+
+// Export API client and endpoints
+export { apiClient, API_ENDPOINTS };
 
 // Cache for user data
 let cachedUser: any = null;

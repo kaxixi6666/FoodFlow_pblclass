@@ -842,19 +842,19 @@ export function Recipes() {
                       {selectedRecipe.prepTime && (
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Clock3 className="w-4 h-4" />
-                          <span>Prep: {selectedRecipe.prepTime}</span>
+                          <span>{selectedRecipe.prepTime}</span>
                         </div>
                       )}
                       {selectedRecipe.cookTime && (
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Clock className="w-4 h-4" />
-                          <span>Cook: {selectedRecipe.cookTime}</span>
+                          <span>{selectedRecipe.cookTime}</span>
                         </div>
                       )}
                       {selectedRecipe.servings && (
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Users2 className="w-4 h-4" />
-                          <span>Servings: {selectedRecipe.servings}</span>
+                          <span>{selectedRecipe.servings}</span>
                         </div>
                       )}
                     </div>
