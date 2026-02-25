@@ -46,10 +46,10 @@ public class NoteLikeService {
                 throw new IllegalArgumentException("Cannot like private note");
             }
 
-            // Check if user is the author of the note
-            if (note.getUserId().equals(userId)) {
-                throw new IllegalArgumentException("Cannot like your own note");
-            }
+            // Allow users to like their own notes
+            // Removed the restriction: if (note.getUserId().equals(userId)) {
+            //     throw new IllegalArgumentException("Cannot like your own note");
+            // }
 
             // Check if user has already liked the note
             Optional<NoteLike> existingLike = noteLikeRepository.findByNoteIdAndUserId(noteId, userId);

@@ -706,11 +706,11 @@ export function MyRecipes() {
         return;
       }
 
-      // Check if user is the author
-      if (recipe.userId === user.id) {
-        alert('Cannot like your own recipe');
-        return;
-      }
+      // Allow users to like their own recipes
+      // Removed the restriction: if (recipe.userId === user.id) {
+      //   alert('Cannot like your own recipe');
+      //   return;
+      // }
 
       // Optimistic update
       setLikedRecipes(prev => new Set(prev).add(recipe.id));
