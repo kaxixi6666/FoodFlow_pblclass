@@ -33,33 +33,12 @@ export function Home() {
   const [detectedIngredients, setDetectedIngredients] = useState<DetectedIngredient[]>(mockDetectedIngredients);
   const [manualIngredients, setManualIngredients] = useState<ManualIngredient[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [dragActive, setDragActive] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState("");
   const [currentScenario, setCurrentScenario] = useState<string>("receipt");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const fileUploadInputRef = useRef<HTMLInputElement>(null);
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFiles(e.dataTransfer.files);
-    }
-  };
 
   const handleFiles = (files: FileList) => {
     const validFiles = Array.from(files).filter(file => {
@@ -88,12 +67,6 @@ export function Home() {
     }
   };
 
-  const handleFileUploadChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      handleFiles(e.target.files);
-    }
-  };
-
   const handleScanReceiptClick = () => {
     setCurrentScenario("receipt");
     fileInputRef.current?.click();
@@ -102,10 +75,6 @@ export function Home() {
   const handleScanFridgeClick = () => {
     setCurrentScenario("fridge");
     fileInputRef.current?.click();
-  };
-
-  const handleBrowseClick = () => {
-    fileUploadInputRef.current?.click();
   };
 
   const removeFile = (index: number) => {
@@ -267,15 +236,7 @@ export function Home() {
         capture
         className="hidden"
       />
-      {/* File Input for Uploads */}
-      <input
-        type="file"
-        ref={fileUploadInputRef}
-        onChange={handleFileUploadChange}
-        multiple
-        accept="image/jpeg,image/png"
-        className="hidden"
-      />
+
       
       {/* Left Column - Primary Action Area */}
       <div className="col-span-2 space-y-6">
@@ -300,37 +261,7 @@ export function Home() {
           </div>
         </div>
 
-        {/* Drag & Drop Upload Zone */}
-        <div
-          className={`bg-white rounded-xl shadow-sm border-2 border-dashed transition-all ${
-            dragActive
-              ? "border-primary bg-orange-50"
-              : "border-gray-200 hover:border-gray-300"
-          }`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-        >
-          <div className="p-12 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-              <Upload className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg text-gray-900 mb-2">Drop Files Here</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              or click to browse your device
-            </p>
-            <button 
-              onClick={handleBrowseClick}
-              className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
-            >
-              Browse Files
-            </button>
-            <p className="text-xs text-gray-400 mt-4">
-              Supports: JPG, PNG (Max 10MB)
-            </p>
-          </div>
-        </div>
+
 
         {/* Selected Files - Folder Style */}
         {selectedFiles.length > 0 && (
