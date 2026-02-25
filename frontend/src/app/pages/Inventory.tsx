@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Button } from "../components/ui/button";
 import { API_ENDPOINTS, fetchAPI } from "../config/api";
+import { dataService } from "../services/dataService";
 
 interface InventoryItem {
   id: number;
@@ -25,7 +26,7 @@ export function Inventory() {
 
   const fetchInventory = useCallback(async () => {
     try {
-      const data = await fetchAPI(API_ENDPOINTS.INVENTORY);
+      const data = await dataService.fetchInventoryData();
       
       const inventoryItems: InventoryItem[] = data.map((item: any) => ({
         id: item.id,

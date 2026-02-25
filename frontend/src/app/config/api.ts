@@ -15,24 +15,32 @@ export const API_ENDPOINTS = {
   SHOPPING_LIST: `${API_BASE_URL}/shopping-list`,
 };
 
+// Cache for user data
+let cachedUser: any = null;
+
+// Function to clear user cache
+export const clearUserCache = () => {
+  cachedUser = null;
+};
+
 export const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
   
-  // Get user from localStorage and add userId to headers
-  let userId: number | undefined;
-  let user: any = null;
-  try {
-    const userStr = localStorage.getItem('user');
-    user = userStr ? JSON.parse(userStr) : null;
-    userId = user?.id;
-  } catch (error) {
-    console.error('Error parsing user from localStorage:', error);
-    userId = undefined;
-    user = null;
+  // Get user from cache or localStorage
+  if (!cachedUser) {
+    try {
+      const userStr = localStorage.getItem('user');
+      cachedUser = userStr ? JSON.parse(userStr) : null;
+    } catch (error) {
+      console.error('Error parsing user from localStorage:', error);
+      cachedUser = null;
+    }
   }
   
+  const userId = cachedUser?.id;
+  
   console.log('fetchAPI - endpoint:', endpoint);
-  console.log('fetchAPI - user:', user);
+  console.log('fetchAPI - user:', cachedUser);
   console.log('fetchAPI - userId:', userId);
   
   const headers: HeadersInit = {

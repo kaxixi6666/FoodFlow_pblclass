@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { clearUserCache } from "../config/api";
 
 interface User {
   id: number;
@@ -57,6 +58,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
+    clearUserCache();
   };
 
   const value = {

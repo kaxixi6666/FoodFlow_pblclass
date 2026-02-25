@@ -5,6 +5,7 @@ import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { Button } from "../components/ui/button";
 import { API_ENDPOINTS, fetchAPI, fetchAPIWithResponse } from "../config/api";
+import { dataService } from "../services/dataService";
 
 interface Ingredient {
   id: number;
@@ -63,18 +64,18 @@ export function MyRecipes() {
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
 
   useEffect(() => {
-    const fetchRecipes = async () => {
+    const loadData = async () => {
       try {
-        const data = await fetchAPI(API_ENDPOINTS.RECIPES);
+        const [recipes, ingredients] = await dataService.fetchRecipesData();
         
-        const draftRecipes = data
+        const draftRecipes = recipes
           .filter((recipe: Recipe) => recipe.status === 'draft')
           .sort((a: Recipe, b: Recipe) => {
             const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
             const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
             return dateB - dateA;
           });
-        const publicRecipesList = data
+        const publicRecipesList = recipes
           .filter((recipe: Recipe) => recipe.status === 'public')
           .sort((a: Recipe, b: Recipe) => {
             const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -83,22 +84,13 @@ export function MyRecipes() {
           });
         
         setMyRecipes([...draftRecipes, ...publicRecipesList]);
+        setAllIngredients(ingredients);
       } catch (error) {
-        console.error('Error fetching recipes:', error);
+        console.error('Error fetching recipes and ingredients:', error);
       }
     };
 
-    const fetchIngredients = async () => {
-      try {
-        const data = await fetchAPI(API_ENDPOINTS.INGREDIENTS);
-        setAllIngredients(data);
-      } catch (error) {
-        console.error('Error fetching ingredients:', error);
-      }
-    };
-
-    fetchRecipes();
-    fetchIngredients();
+    loadData();
   }, []);
 
   useEffect(() => {

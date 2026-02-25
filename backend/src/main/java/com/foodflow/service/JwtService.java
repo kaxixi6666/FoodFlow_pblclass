@@ -13,6 +13,7 @@ import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 @Service
@@ -23,6 +24,12 @@ public class JwtService {
 
     @Value("${jwt.expiration}")
     private int jwtExpirationMs;
+
+    // Token cache to reduce token generation overhead
+    private final Map<String, String> tokenCache = new ConcurrentHashMap<>();
+    
+    // Cache expiry tracking
+    private final Map<String, Long> tokenExpiryCache = new ConcurrentHashMap<>();
 
     // Extract username from JWT token
     public String extractUsername(String token) {
@@ -97,20 +104,44 @@ public class JwtService {
 
     // Generate JWT token with extra claims
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-        return Jwts
+        String username = userDetails.getUsername();
+        
+        // Check if token is already cached and not expired
+        if (tokenCache.containsKey(username)) {
+            Long expiryTime = tokenExpiryCache.get(username);
+            if (expiryTime != null && expiryTime > System.currentTimeMillis()) {
+                return tokenCache.get(username);
+            }
+        }
+        
+        String token = Jwts
                 .builder()
                 .setClaims(extraClaims)
-                .setSubject(userDetails.getUsername())
+                .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs * 1000))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+        
+        // Cache the token
+        tokenCache.put(username, token);
+        tokenExpiryCache.put(username, System.currentTimeMillis() + (jwtExpirationMs - 300) * 1000); // 5 minutes before expiry
+        
+        return token;
     }
 
     // Generate JWT token for user by username
     public String generateToken(String username) {
+        // Check if token is already cached and not expired
+        if (tokenCache.containsKey(username)) {
+            Long expiryTime = tokenExpiryCache.get(username);
+            if (expiryTime != null && expiryTime > System.currentTimeMillis()) {
+                return tokenCache.get(username);
+            }
+        }
+        
         Map<String, Object> claims = new HashMap<>();
-        return Jwts
+        String token = Jwts
                 .builder()
                 .setClaims(claims)
                 .setSubject(username)
@@ -118,6 +149,12 @@ public class JwtService {
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs * 1000))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+        
+        // Cache the token
+        tokenCache.put(username, token);
+        tokenExpiryCache.put(username, System.currentTimeMillis() + (jwtExpirationMs - 300) * 1000); // 5 minutes before expiry
+        
+        return token;
     }
 
     // Validate JWT token
@@ -130,5 +167,17 @@ public class JwtService {
     public Boolean validateToken(String token, String username) {
         final String extractedUsername = extractUsername(token);
         return (extractedUsername.equals(username) && !isTokenExpired(token));
+    }
+
+    // Invalidate token for user
+    public void invalidateToken(String username) {
+        tokenCache.remove(username);
+        tokenExpiryCache.remove(username);
+    }
+
+    // Clear all token cache
+    public void clearTokenCache() {
+        tokenCache.clear();
+        tokenExpiryCache.clear();
     }
 }
