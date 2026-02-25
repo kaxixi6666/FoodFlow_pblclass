@@ -219,10 +219,9 @@ public class RecipeController {
             existingRecipe.setInstructions(recipe.getInstructions());
             existingRecipe.setNote(recipe.getNote());
             
-            // Update isPublic if provided
-            if (recipe.getIsPublic() != null) {
-                existingRecipe.setIsPublic(recipe.getIsPublic());
-            }
+            // Update isPublic based on status
+            existingRecipe.setIsPublic("public".equals(recipe.getStatus()));
+            System.out.println("Updated isPublic to: " + existingRecipe.getIsPublic() + " based on status: " + recipe.getStatus());
             
             // Clear existing ingredients
             if (existingRecipe.getIngredients() != null) {
