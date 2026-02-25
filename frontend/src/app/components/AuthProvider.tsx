@@ -35,9 +35,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     // Check if user is logged in
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } catch (error) {
+      console.error('Error parsing user from localStorage:', error);
+      // Clear corrupted user data
+      localStorage.removeItem('user');
+      setUser(null);
     }
     setLoading(false);
   }, []);

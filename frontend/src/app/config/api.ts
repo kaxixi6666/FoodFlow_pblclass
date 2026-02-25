@@ -140,9 +140,15 @@ export const analyzeImageWithZhipuAI = async (imageBase64: string, scenario: str
   const ZHIPU_API_KEY = '5f41881a249d43ada948ef287b72f0c9.HQNZjfXnADSoFFDX'; // Replace with your actual API key
   
   // Get user from localStorage
-  const userStr = localStorage.getItem('user');
-  const user = userStr ? JSON.parse(userStr) : null;
-  const userId = user?.id;
+  let userId: number | undefined;
+  try {
+    const userStr = localStorage.getItem('user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    userId = user?.id;
+  } catch (error) {
+    console.error('Error parsing user from localStorage:', error);
+    userId = undefined;
+  }
   
   console.log('analyzeImageWithZhipuAI - userId:', userId);
   console.log('analyzeImageWithZhipuAI - scenario:', scenario);
