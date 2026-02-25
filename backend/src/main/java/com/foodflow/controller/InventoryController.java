@@ -94,6 +94,92 @@ public class InventoryController {
         }
     }
 
+    @PostMapping("/batch")
+    @Transactional
+    public ResponseEntity<?> batchAddToInventory(
+        @RequestBody BatchInventoryRequest batchRequest,
+        @RequestHeader(value = "X-User-Id", required = false) Long userId
+    ) {
+        try {
+            // Validate userId
+            if (userId == null) {
+                System.err.println("Error: X-User-Id header is missing");
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "X-User-Id header is required");
+                error.put("code", 400);
+                return ResponseEntity.badRequest().body(error);
+            }
+
+            // Validate request
+            if (batchRequest.getItems() == null || batchRequest.getItems().isEmpty()) {
+                System.err.println("Error: Items list is empty");
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Items list is required");
+                error.put("code", 400);
+                return ResponseEntity.badRequest().body(error);
+            }
+
+            System.out.println("Batch adding to inventory - userId: " + userId + ", items: " + batchRequest.getItems().size());
+
+            List<InventoryResponse> responses = new ArrayList<>();
+            LocalDateTime now = LocalDateTime.now();
+
+            for (InventoryRequest itemRequest : batchRequest.getItems()) {
+                // Validate each item
+                if (itemRequest.getName() == null || itemRequest.getName().trim().isEmpty()) {
+                    System.err.println("Error: Ingredient name is required");
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("error", "Ingredient name is required");
+                    error.put("code", 400);
+                    return ResponseEntity.badRequest().body(error);
+                }
+
+                // Create ingredient
+                Ingredient ingredient = new Ingredient();
+                ingredient.setName(itemRequest.getName().trim());
+                ingredient.setCategory(itemRequest.getCategory() != null ? itemRequest.getCategory().trim() : "Uncategorized");
+                ingredient.setDescription(itemRequest.getDescription() != null ? itemRequest.getDescription().trim() : null);
+                entityManager.persist(ingredient);
+
+                // Create inventory
+                Inventory inventory = new Inventory();
+                inventory.setIngredient(ingredient);
+                inventory.setUserId(userId);
+                inventory.setLastUpdated(now);
+                inventory.setCreatedAt(now);
+                entityManager.persist(inventory);
+
+                // Add to response
+                InventoryResponse response = new InventoryResponse();
+                response.setId(inventory.getId());
+                response.setName(ingredient.getName());
+                response.setCategory(ingredient.getCategory());
+                ZoneId tokyoZone = ZoneId.of("Asia/Tokyo");
+                ZonedDateTime tokyoTime = now.atZone(ZoneId.systemDefault()).withZoneSameInstant(tokyoZone);
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                response.setLastUpdated(tokyoTime.format(formatter));
+                responses.add(response);
+            }
+
+            entityManager.flush();
+            System.out.println("Successfully created " + responses.size() + " inventory items");
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", "Successfully added " + responses.size() + " items to inventory");
+            result.put("items", responses);
+
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            System.err.println("Error batch adding to inventory: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Failed to batch add to inventory: " + e.getMessage());
+            error.put("code", 500);
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+
     @GetMapping
     public ResponseEntity<?> getInventory(@RequestHeader(value = "X-User-Id", required = false) Long userId) {
         try {
@@ -240,6 +326,14 @@ public class InventoryController {
         public void setCategory(String category) { this.category = category; }
         public String getDescription() { return description; }
         public void setDescription(String description) { this.description = description; }
+    }
+
+    public static class BatchInventoryRequest {
+        private List<InventoryRequest> items;
+
+        // Getters and setters
+        public List<InventoryRequest> getItems() { return items; }
+        public void setItems(List<InventoryRequest> items) { this.items = items; }
     }
 
     public static class InventoryUpdateRequest {

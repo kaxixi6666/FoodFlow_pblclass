@@ -39,9 +39,6 @@ public class Recipe {
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
 
-    @Column(name = "like_count", nullable = false, columnDefinition = "BIGINT DEFAULT 0")
-    private Long likeCount = 0L;
-
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -136,14 +133,6 @@ public class Recipe {
 
     public void setNote(String note) {
         this.note = note;
-    }
-
-    public Long getLikeCount() {
-        return likeCount;
-    }
-
-    public void setLikeCount(Long likeCount) {
-        this.likeCount = likeCount;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -1,5 +1,5 @@
-import { Search, ChevronDown, ChevronUp, Trash2, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Search, ChevronDown, ChevronUp, Trash2, X, Plus, Minus } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Button } from "../components/ui/button";
 import { API_ENDPOINTS, fetchAPI } from "../config/api";
@@ -21,65 +21,63 @@ export function Inventory() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc"> ("desc");
+  const [isDeleting, setIsDeleting] = useState<Set<number>>(new Set());
 
-  // Fetch inventory data from backend API
-  useEffect(() => {
-    const fetchInventory = async () => {
-      try {
-        const data = await fetchAPI(API_ENDPOINTS.INVENTORY);
-        
-        // Transform data to match InventoryItem interface
-        const inventoryItems: InventoryItem[] = data.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          category: item.category,
-          lastUpdated: item.lastUpdated,
-          selected: false,
-          editing: false
-        }));
-        
-        // Sort by lastUpdated in descending order (newest first)
-        inventoryItems.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
-        
-        setInventory(inventoryItems);
-      } catch (error) {
-        console.error('Error fetching inventory:', error);
-        // Check if error is about missing userId
-        if (error instanceof Error && error.message.includes('400')) {
-          alert('Please login to view your inventory');
-        }
-      } finally {
-        setLoading(false);
+  const fetchInventory = useCallback(async () => {
+    try {
+      const data = await fetchAPI(API_ENDPOINTS.INVENTORY);
+      
+      const inventoryItems: InventoryItem[] = data.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        lastUpdated: item.lastUpdated,
+        selected: false,
+        editing: false
+      }));
+      
+      inventoryItems.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
+      
+      setInventory(inventoryItems);
+    } catch (error) {
+      console.error('Error fetching inventory:', error);
+      if (error instanceof Error && error.message.includes('400')) {
+        alert('Please login to view your inventory');
       }
-    };
-
-    fetchInventory();
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchInventory();
+  }, [fetchInventory]);
 
   const selectedCount = inventory.filter(item => item.selected).length;
   const allSelected = inventory.length > 0 && selectedCount === inventory.length;
 
-  const toggleSelectAll = () => {
+  const toggleSelectAll = useCallback(() => {
     setInventory(inventory.map(item => ({ ...item, selected: !allSelected })));
-  };
+  }, [inventory, allSelected]);
 
-  const toggleSelect = (id: number) => {
+  const toggleSelect = useCallback((id: number) => {
     setInventory(inventory.map(item => 
       item.id === id ? { ...item, selected: !item.selected } : item
     ));
-  };
+  }, [inventory]);
 
   const clearSelected = async () => {
     const selectedItems = inventory.filter(item => item.selected);
+    const selectedIds = selectedItems.map(item => item.id);
+    
+    setIsDeleting(prev => new Set([...prev, ...selectedIds]));
     
     try {
-      const deletePromises = selectedItems.map(async (item) => {
-        await fetchAPI(`${API_ENDPOINTS.INVENTORY}/${item.id}`, {
+      const deletePromises = selectedItems.map(item => 
+        fetchAPI(`${API_ENDPOINTS.INVENTORY}/${item.id}`, {
           method: 'DELETE'
-        });
-        
-        return item.id;
-      });
+        })
+      );
       
       await Promise.all(deletePromises);
       
@@ -87,46 +85,57 @@ export function Inventory() {
     } catch (error) {
       console.error('Error deleting items:', error);
       alert('Failed to delete items. Please try again.');
+      await fetchInventory();
+    } finally {
+      setIsDeleting(new Set());
     }
   };
 
-  const clearAllSelections = () => {
+  const clearAllSelections = useCallback(() => {
     setInventory(inventory.map(item => ({ ...item, selected: false })));
-  };
+  }, [inventory]);
 
   const deleteItem = async (id: number) => {
+    setIsDeleting(prev => new Set([...prev, id]));
+    
+    const originalInventory = [...inventory];
+    setInventory(inventory.filter(item => item.id !== id));
+    
     try {
       await fetchAPI(`${API_ENDPOINTS.INVENTORY}/${id}`, {
         method: 'DELETE'
       });
-      
-      setInventory(inventory.filter(item => item.id !== id));
     } catch (error) {
       console.error('Error deleting item:', error);
       alert('Failed to delete item. Please try again.');
+      setInventory(originalInventory);
+    } finally {
+      setIsDeleting(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
     }
   };
 
-  // Filter and sort
   let filteredInventory = inventory.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "All Categories" || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-  };
+  }, []);
 
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleCategoryChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedCategory(e.target.value);
-  };
+  }, []);
 
-  const toggleSortOrder = () => {
+  const toggleSortOrder = useCallback(() => {
     const newSortOrder = sortOrder === "desc" ? "asc" : "desc";
     setSortOrder(newSortOrder);
     
-    // Sort the inventory items based on lastUpdated
     const sortedInventory = [...inventory].sort((a, b) => {
       const dateA = new Date(a.lastUpdated).getTime();
       const dateB = new Date(b.lastUpdated).getTime();
@@ -134,7 +143,7 @@ export function Inventory() {
     });
     
     setInventory(sortedInventory);
-  };
+  }, [inventory, sortOrder]);
 
   if (loading) {
     return (
@@ -190,6 +199,7 @@ export function Inventory() {
             <Button
               onClick={clearSelected}
               variant="default"
+              disabled={selectedCount > 0 && Array.from(isDeleting).some(id => selectedItems.some(item => item.id === id))}
             >
               <Trash2 className="w-4 h-4" />
               Delete Selected ({selectedCount})
@@ -251,6 +261,7 @@ export function Inventory() {
                     variant="ghost"
                     size="icon"
                     className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+                    disabled={isDeleting.has(item.id)}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

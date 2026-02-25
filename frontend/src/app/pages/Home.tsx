@@ -146,34 +146,28 @@ export function Home() {
     setUploadMessage("Adding to inventory...");
     
     try {
-      // Call backend API to add ingredients to inventory
-      const addPromises = ingredientsToAdd.map(ingredient => {
-        // Get category from ingredient or default to "Uncategorized"
+      const inventoryRequests = ingredientsToAdd.map(ingredient => {
         const category = 'category' in ingredient ? ingredient.category : "Uncategorized";
-        
-        const inventoryRequest = {
+        return {
           name: ingredient.name,
           category: category
         };
-        
-        return fetchAPI(API_ENDPOINTS.INVENTORY, {
-          method: 'POST',
-          body: JSON.stringify(inventoryRequest)
-        });
       });
       
-      await Promise.all(addPromises);
+      await fetchAPI(`${API_ENDPOINTS.INVENTORY}/batch`, {
+        method: 'POST',
+        body: JSON.stringify({
+          items: inventoryRequests
+        })
+      });
       
-      // Clear form after successful addition
       setDetectedIngredients([]);
       setManualIngredients([]);
       setSelectedFiles([]);
       setUploadMessage(`Successfully added ${ingredientsToAdd.length} items to inventory`);
       
-      // Show success toast notification
       toast.success(`Successfully added ${ingredientsToAdd.length} items to inventory`);
       
-      // Navigate to Inventory page to show merged results
       setTimeout(() => {
         navigate('/inventory');
       }, 1000);

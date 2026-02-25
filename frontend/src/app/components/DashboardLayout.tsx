@@ -1,8 +1,7 @@
 import { Outlet, NavLink, useLocation } from "react-router";
-import { Home, Package, BookOpen, Filter, Calendar, ChevronLeft, ChevronRight, Search, Settings, LogOut } from "lucide-react";
+import { Home, Package, BookOpen, Filter, Calendar, ChevronLeft, ChevronRight, Search, Settings, Bell, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "./AuthProvider";
-import { Notifications } from "./Notifications";
 
 const navItems = [
   { to: "/", label: "Home", icon: Home },
@@ -142,7 +141,10 @@ export function DashboardLayout() {
 
           {/* Right Side - Notifications, Settings, Profile */}
           <div className="flex items-center gap-4">
-            <Notifications />
+            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">
+              <Bell className="w-5 h-5 text-gray-600" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
+            </button>
             <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <Settings className="w-5 h-5 text-gray-600" />
             </button>

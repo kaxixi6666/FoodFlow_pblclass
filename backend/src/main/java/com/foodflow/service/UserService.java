@@ -50,8 +50,4 @@ public class UserService {
             "SELECT u FROM User u ORDER BY u.createdAt DESC", User.class
         ).getResultList();
     }
-
-    public User findById(Long id) {
-        return entityManager.find(User.class, id);
-    }
 }
