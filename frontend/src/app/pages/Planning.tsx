@@ -1,6 +1,6 @@
 import { Plus, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router";
+import { useLocation } from "react-router-dom";
 import { API_ENDPOINTS, fetchAPI } from "../config/api";
 import { useAuth } from "../components/AuthProvider";
 

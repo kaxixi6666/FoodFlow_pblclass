@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { Label } from "../components/ui/label";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../components/AuthProvider";
 import { API_ENDPOINTS, apiClient } from "../config/api";
 

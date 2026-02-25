@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useLocation } from "react-router";
+import { Outlet, NavLink, useLocation } from "react-router-dom";
 import { Home, Package, BookOpen, Filter, Calendar, ChevronLeft, ChevronRight, Search, Settings, Bell, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "./AuthProvider";

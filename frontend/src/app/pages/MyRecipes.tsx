@@ -1,6 +1,6 @@
 import { Search, Plus, Clock, Users, ChefHat, ChevronDown, ChevronUp, MoreVertical, PlusCircle, X, Clock3, Users2 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { Button } from "../components/ui/button";
