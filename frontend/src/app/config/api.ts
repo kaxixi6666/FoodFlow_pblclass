@@ -20,13 +20,15 @@ export const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   
   // Get user from localStorage and add userId to headers
   let userId: number | undefined;
+  let user: any = null;
   try {
     const userStr = localStorage.getItem('user');
-    const user = userStr ? JSON.parse(userStr) : null;
+    user = userStr ? JSON.parse(userStr) : null;
     userId = user?.id;
   } catch (error) {
     console.error('Error parsing user from localStorage:', error);
     userId = undefined;
+    user = null;
   }
   
   console.log('fetchAPI - endpoint:', endpoint);
