@@ -1,4 +1,5 @@
-import { createHashRouter, lazy, Suspense } from "react-router";
+import { createHashRouter } from "react-router";
+import { lazy, Suspense } from "react";
 import { DashboardLayout } from "./components/DashboardLayout";
 import { Login } from "./pages/Login";
 import { ProtectedRoute } from "./components/ProtectedRoute";

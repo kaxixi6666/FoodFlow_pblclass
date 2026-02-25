@@ -1,5 +1,11 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
+// Extend AxiosRequestConfig to include _cachedResponse
+interface ExtendedAxiosRequestConfig<T = any> extends AxiosRequestConfig<T> {
+  _cachedResponse?: any;
+  cache?: boolean;
+}
+
 // API基础URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://foodflow-pblclass.onrender.com/api';
 
@@ -57,7 +63,7 @@ class ApiClient {
   /**
    * 生成请求缓存键
    */
-  private generateCacheKey(config: AxiosRequestConfig): string {
+  private generateCacheKey(config: ExtendedAxiosRequestConfig): string {
     const { url, method, params, data } = config;
     const key = `${method || 'GET'}-${url}-${JSON.stringify(params || {})}-${JSON.stringify(data || {})}`;
     return key;
@@ -66,7 +72,7 @@ class ApiClient {
   /**
    * 处理请求
    */
-  private handleRequest(config: AxiosRequestConfig): AxiosRequestConfig {
+  private handleRequest(config: ExtendedAxiosRequestConfig): ExtendedAxiosRequestConfig {
     // 获取用户信息
     const user = this.getUserFromLocalStorage();
     
@@ -178,7 +184,12 @@ class ApiClient {
   /**
    * 发送请求（带请求去重）
    */
-  async request<T = any>(config: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async request<T = any>(config: ExtendedAxiosRequestConfig): Promise<ApiResponse<T>> {
+    // 检查是否有缓存响应
+    if ('_cachedResponse' in config) {
+      return config._cachedResponse as ApiResponse<T>;
+    }
+
     // 生成请求键
     const requestKey = this.generateCacheKey(config);
 
@@ -209,7 +220,7 @@ class ApiClient {
   /**
    * GET请求
    */
-  async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async get<T = any>(url: string, config?: ExtendedAxiosRequestConfig): Promise<ApiResponse<T>> {
     return this.request<T>({
       method: 'get',
       url,
@@ -220,7 +231,7 @@ class ApiClient {
   /**
    * POST请求
    */
-  async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async post<T = any>(url: string, data?: any, config?: ExtendedAxiosRequestConfig): Promise<ApiResponse<T>> {
     return this.request<T>({
       method: 'post',
       url,
@@ -232,7 +243,7 @@ class ApiClient {
   /**
    * PUT请求
    */
-  async put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async put<T = any>(url: string, data?: any, config?: ExtendedAxiosRequestConfig): Promise<ApiResponse<T>> {
     return this.request<T>({
       method: 'put',
       url,
@@ -244,7 +255,7 @@ class ApiClient {
   /**
    * DELETE请求
    */
-  async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async delete<T = any>(url: string, config?: ExtendedAxiosRequestConfig): Promise<ApiResponse<T>> {
     return this.request<T>({
       method: 'delete',
       url,

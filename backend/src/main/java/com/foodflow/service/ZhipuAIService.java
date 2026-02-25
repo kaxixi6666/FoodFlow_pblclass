@@ -26,9 +26,10 @@ public class ZhipuAIService {
     
     public ZhipuAIService() {
         this.client = new OkHttpClient.Builder()
-                .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-                .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
                 .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .retryOnConnectionFailure(true)
                 .build();
     }
     
@@ -63,9 +64,14 @@ public class ZhipuAIService {
      * @throws IOException
      */
     public String detectAndTranslateImage(byte[] imageData, String imageFormat, String scenario) throws IOException {
+        System.out.println("ZhipuAIService.detectAndTranslateImage - Starting analysis");
+        System.out.println("ZhipuAIService.detectAndTranslateImage - Scenario: " + scenario);
+        System.out.println("ZhipuAIService.detectAndTranslateImage - Image size: " + imageData.length + " bytes");
+        
         // Convert image to Base64
         String base64Image = Base64.encodeBase64String(imageData);
         String imageUrl = "data:image/" + imageFormat + ";base64," + base64Image;
+        System.out.println("ZhipuAIService.detectAndTranslateImage - Image converted to base64");
 
         // Build request body
         JSONObject requestBody = new JSONObject();
@@ -128,14 +134,22 @@ public class ZhipuAIService {
                 .post(body)
                 .build();
 
+        System.out.println("ZhipuAIService.detectAndTranslateImage - Sending request to BigModel API");
+        
         // Send request
         try (Response response = client.newCall(request).execute()) {
+            System.out.println("ZhipuAIService.detectAndTranslateImage - Response received: " + response.code());
+            
             if (!response.isSuccessful()) {
-                throw new IOException("Unexpected code " + response);
+                String errorBody = response.body() != null ? response.body().string() : "No error body";
+                System.err.println("ZhipuAIService.detectAndTranslateImage - API Error: " + response.code() + " - " + errorBody);
+                throw new IOException("Unexpected code " + response + " - " + errorBody);
             }
 
             // Parse response
             String responseBody = response.body().string();
+            System.out.println("ZhipuAIService.detectAndTranslateImage - Response body length: " + responseBody.length());
+            
             JSONObject jsonResponse = JSON.parseObject(responseBody);
 
             // Extract translation result
@@ -145,12 +159,18 @@ public class ZhipuAIService {
                     JSONObject choice = choices.get(0);
                     JSONObject message = choice.getJSONObject("message");
                     if (message != null && message.containsKey("content")) {
-                        return message.getString("content");
+                        String result = message.getString("content");
+                        System.out.println("ZhipuAIService.detectAndTranslateImage - Analysis completed successfully");
+                        return result;
                     }
                 }
             }
 
             throw new IOException("Failed to extract translation result from response: " + responseBody);
+        } catch (IOException e) {
+            System.err.println("ZhipuAIService.detectAndTranslateImage - IOException: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
     }
 }

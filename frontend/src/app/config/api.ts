@@ -99,154 +99,33 @@ export const convertImageToBase64 = (file: File): Promise<string> => {
 };
 
 /**
- * Call Zhipu GLM-4V API for image analysis
- * @param imageBase64 Base64 encoded image data (with data URL prefix)
+ * Call backend API for image analysis
+ * @param file Image file to analyze
  * @param scenario Analysis scenario (receipt or fridge)
- * @returns Analysis result from Zhipu API
+ * @returns Analysis result from backend
  */
-export const analyzeImageWithZhipuAI = async (imageBase64: string, scenario: string = 'receipt'): Promise<any> => {
-  const ZHIPU_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
-  const ZHIPU_API_KEY = '5f41881a249d43ada948ef287b72f0c9.HQNZjfXnADSoFFDX'; // Replace with your actual API key
-  
-  // Get user from localStorage
-  let userId: number | undefined;
+export const analyzeImageWithBackend = async (file: File, scenario: string = 'receipt'): Promise<any> => {
+  const formData = new FormData();
+  formData.append('image', file);
+  formData.append('scenario', scenario);
+
   try {
-    const userStr = localStorage.getItem('user');
-    const user = userStr ? JSON.parse(userStr) : null;
-    userId = user?.id;
-  } catch (error) {
-    console.error('Error parsing user from localStorage:', error);
-    userId = undefined;
-  }
-  
-  console.log('analyzeImageWithZhipuAI - userId:', userId);
-  console.log('analyzeImageWithZhipuAI - scenario:', scenario);
-  console.log('analyzeImageWithZhipuAI - imageBase64 length:', imageBase64.length);
-  
-  // Build prompt based on scenario
-  const prompt = scenario === 'fridge'
-    ? 'Please identify all food ingredients visible in this fridge image, ignore packaging and background.\nRules:\nReturn ONLY pure JSON array, no markdown, no ```json, no backticks, no extra words.\nFormat: ["ingredient1","ingredient2","ingredient3"]\nDo NOT add any explanation outside of JSON.'
-    : 'Please identify all food ingredients in this receipt image.\nRules:\n1. Translate all ingredient names to English\n2. Return ONLY pure JSON array, no markdown, no ```json, no backticks, no extra words\n3. Format: ["ingredient1","ingredient2","ingredient3"]\n4. Do NOT add any explanation outside of JSON\n5. All ingredient names must be in English\n6. Do NOT include quantities, only ingredient names';
-  
-  // Build request body
-  const requestBody = {
-    model: 'glm-4v',
-    messages: [
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'image_url',
-            image_url: {
-              url: imageBase64
-            }
-          },
-          {
-            type: 'text',
-            text: prompt
-          }
-        ]
-      }
-    ],
-    temperature: 0.7,
-    max_tokens: 2048
-  };
-  
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${ZHIPU_API_KEY}`
-  };
-  
-  // Add X-User-Id header if user is logged in
-  if (userId) {
-    (headers as any)['X-User-Id'] = userId.toString();
-    console.log('analyzeImageWithZhipuAI - Adding X-User-Id header:', userId);
-  }
-  
-  console.log('analyzeImageWithZhipuAI - sending request to:', ZHIPU_API_URL);
-  console.log('analyzeImageWithZhipuAI - request body:', JSON.stringify(requestBody, null, 2));
-  
-  try {
-    const response = await fetch(ZHIPU_API_URL, {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://foodflow-pblclass.onrender.com/api'}/inventory/detect`, {
       method: 'POST',
-      headers,
-      body: JSON.stringify(requestBody)
+      headers: {
+        // Don't set Content-Type header, let browser set it with boundary
+      },
+      body: formData,
     });
-    
-    console.log('analyzeImageWithZhipuAI - response status:', response.status);
-    console.log('analyzeImageWithZhipuAI - response ok:', response.ok);
-    
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Zhipu API Error: ${response.status} - ${errorText}`);
-      
-      // Handle specific error cases
-      if (response.status === 401) {
-        throw new Error('Invalid Zhipu API Key. Please check your API key configuration.');
-      } else if (response.status === 429) {
-        throw new Error('Zhipu API rate limit exceeded. Please try again later.');
-      } else if (response.status === 500) {
-        throw new Error('Zhipu API server error. Please try again later.');
-      } else {
-        throw new Error(`Zhipu API request failed: ${response.status} - ${errorText}`);
-      }
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Backend API error: ${response.status}`);
     }
-    
-    const result = await response.json();
-    console.log('analyzeImageWithZhipuAI - result:', result);
-    
-    // Extract content from response
-    if (result.choices && result.choices.length > 0) {
-      let content = result.choices[0].message.content;
-      console.log('analyzeImageWithZhipuAI - raw content:', content);
-      
-      // Clean up markdown formatting if present
-      content = content.trim();
-      
-      // Remove markdown code blocks if present
-      if (content.startsWith('```json')) {
-        content = content.replace(/^```json\s*/, '').replace(/```\s*$/, '');
-      } else if (content.startsWith('```')) {
-        content = content.replace(/^```\s*/, '').replace(/```\s*$/, '');
-      }
-      
-      // Remove any remaining backticks
-      content = content.replace(/`/g, '');
-      
-      content = content.trim();
-      console.log('analyzeImageWithZhipuAI - cleaned content:', content);
-      
-      // Parse content based on scenario
-      try {
-        // Both scenarios now return the same format: ["ingredient1", "ingredient2"]
-        const ingredients = JSON.parse(content);
-        const detectedItems = ingredients.map((name: string, index: number) => ({
-          id: index + 1,
-          name: name
-        }));
-        return { detectedItems, scenario };
-      } catch (parseError) {
-        console.error('analyzeImageWithZhipuAI - parse error:', parseError);
-        console.error('analyzeImageWithZhipuAI - content that failed to parse:', content);
-        throw new Error('Failed to parse AI response. Please try again.');
-      }
-    } else {
-      throw new Error('Invalid response from Zhipu API. Please try again.');
-    }
+
+    return await response.json();
   } catch (error) {
-    console.error('analyzeImageWithZhipuAI - error:', error);
-    
-    if (error instanceof Error) {
-      // Re-throw known errors
-      if (error.message.includes('Zhipu API')) {
-        throw error;
-      }
-      // Handle network errors
-      if (error.message.includes('fetch') || error.message.includes('network')) {
-        throw new Error('Network error. Please check your internet connection and try again.');
-      }
-    }
-    
-    throw new Error('Failed to analyze image. Please try again.');
+    console.error('analyzeImageWithBackend - error:', error);
+    throw error;
   }
 };

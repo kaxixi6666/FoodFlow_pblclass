@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Upload, Camera, Scan, Search, Check, X, Edit2, Plus, FileText, Image } from "lucide-react";
 import { toast } from "sonner";
-import { API_ENDPOINTS, apiClient, convertImageToBase64, analyzeImageWithZhipuAI } from "../config/api";
+import { API_ENDPOINTS, apiClient, analyzeImageWithBackend } from "../config/api";
 
 interface DetectedIngredient {
   id: number;
@@ -88,15 +88,12 @@ export function Home() {
     setUploadMessage("Analyzing files...");
     
     try {
-      // Convert image to Base64
+      // Call backend API for analysis
       const file = selectedFiles[0];
-      const imageBase64 = await convertImageToBase64(file);
-      
-      console.log('handleSubmitFiles - imageBase64 length:', imageBase64.length);
+      console.log('handleSubmitFiles - file:', file.name);
       console.log('handleSubmitFiles - scenario:', currentScenario);
       
-      // Call Zhipu AI API for analysis
-      const response = await analyzeImageWithZhipuAI(imageBase64, currentScenario);
+      const response = await analyzeImageWithBackend(file, currentScenario);
       
       console.log('Detected ingredients response:', response);
       
@@ -118,16 +115,10 @@ export function Home() {
       console.error('Error analyzing files:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
-      if (errorMessage.includes('Invalid Zhipu API Key')) {
-        toast.error('Invalid Zhipu API Key. Please check your API key configuration.');
-      } else if (errorMessage.includes('rate limit')) {
-        toast.error('Zhipu API rate limit exceeded. Please try again later.');
-      } else if (errorMessage.includes('server error')) {
-        toast.error('Zhipu API server error. Please try again later.');
+      if (errorMessage.includes('Backend API error')) {
+        toast.error('Backend API error. Please try again.');
       } else if (errorMessage.includes('Network error')) {
         toast.error('Network error. Please check your internet connection and try again.');
-      } else if (errorMessage.includes('Failed to parse AI response')) {
-        toast.error('Failed to parse AI response. Please try again.');
       } else {
         toast.error('Failed to analyze image. Please try again.');
       }
@@ -173,8 +164,14 @@ export function Home() {
       
     } catch (error) {
       console.error('Error adding to inventory:', error);
-      setUploadMessage('Error adding to inventory. Please try again.');
-      // Error state is already handled by the UI
+      // Add more detailed error message
+      if (error instanceof Error) {
+        setUploadMessage(`Error: ${error.message}`);
+        toast.error(`Failed to add to inventory: ${error.message}`);
+      } else {
+        setUploadMessage('Error adding to inventory. Please try again.');
+        toast.error('Failed to add to inventory. Please try again.');
+      }
     } finally {
       setUploading(false);
     }
