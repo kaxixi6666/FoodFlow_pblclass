@@ -823,14 +823,14 @@ export function MyRecipes() {
                   <div className="mb-4">
                     <div className="text-sm text-gray-600 mb-2">Ingredients ({recipe.ingredients?.length || 0})</div>
                     <div className="flex flex-wrap gap-1">
-                      {recipe.ingredients?.slice(0, 3).map((ingredient, idx) => (
+                      {recipe.ingredients?.slice(0, 2).map((ingredient, idx) => (
                         <span key={idx} className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-700">
                           {ingredient.name}
                         </span>
                       ))}
-                      {(recipe.ingredients?.length || 0) > 3 && (
+                      {(recipe.ingredients?.length || 0) > 2 && (
                         <span className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-700">
-                          +{(recipe.ingredients?.length || 0) - 3} more
+                          +{(recipe.ingredients?.length || 0) - 2} more
                         </span>
                       )}
                     </div>
