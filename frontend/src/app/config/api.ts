@@ -19,9 +19,15 @@ export const fetchAPI = async (endpoint: string, options?: RequestInit) => {
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
   
   // Get user from localStorage and add userId to headers
-  const userStr = localStorage.getItem('user');
-  const user = userStr ? JSON.parse(userStr) : null;
-  const userId = user?.id;
+  let userId: number | undefined;
+  try {
+    const userStr = localStorage.getItem('user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    userId = user?.id;
+  } catch (error) {
+    console.error('Error parsing user from localStorage:', error);
+    userId = undefined;
+  }
   
   console.log('fetchAPI - endpoint:', endpoint);
   console.log('fetchAPI - user:', user);
@@ -70,9 +76,15 @@ export const fetchAPIWithResponse = async (endpoint: string, options?: RequestIn
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
   
   // Get user from localStorage and add userId to headers
-  const userStr = localStorage.getItem('user');
-  const user = userStr ? JSON.parse(userStr) : null;
-  const userId = user?.id;
+  let userId: number | undefined;
+  try {
+    const userStr = localStorage.getItem('user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    userId = user?.id;
+  } catch (error) {
+    console.error('Error parsing user from localStorage:', error);
+    userId = undefined;
+  }
   
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
