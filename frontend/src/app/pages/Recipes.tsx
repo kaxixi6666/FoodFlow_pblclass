@@ -69,31 +69,27 @@ export function Recipes() {
         apiClient.get(API_ENDPOINTS.INGREDIENTS)
       ]);
       
-      if (recipesResponse.success && ingredientsResponse.success) {
-        const data = recipesResponse.data;
-        const ingredients = ingredientsResponse.data;
-        
-        // Separate recipes by status and sort by createdAt (newest first)
-        const draftRecipes = data
-          .filter((recipe: Recipe) => recipe.status === 'draft')
-          .sort((a: Recipe, b: Recipe) => {
-            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-            return dateB - dateA;
-          });
-        const publicRecipesList = data
-          .filter((recipe: Recipe) => recipe.status === 'public')
-          .sort((a: Recipe, b: Recipe) => {
-            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-            return dateB - dateA;
-          });
-        
-        // Set state
-        setMyRecipes([...draftRecipes, ...publicRecipesList]);
-        setPublicRecipes(publicRecipesList);
-        setAllIngredients(ingredients);
-      }
+      const data = Array.isArray(recipesResponse) ? recipesResponse : [];
+      const ingredients = Array.isArray(ingredientsResponse) ? ingredientsResponse : [];
+      
+      const draftRecipes = data
+        .filter((recipe: Recipe) => recipe.status === 'draft')
+        .sort((a: Recipe, b: Recipe) => {
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA;
+        });
+      const publicRecipesList = data
+        .filter((recipe: Recipe) => recipe.status === 'public')
+        .sort((a: Recipe, b: Recipe) => {
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA;
+        });
+      
+      setMyRecipes([...draftRecipes, ...publicRecipesList]);
+      setPublicRecipes(publicRecipesList);
+      setAllIngredients(ingredients);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -165,23 +161,16 @@ export function Recipes() {
       // Use apiClient for saving recipe
       const response = await apiClient.post(API_ENDPOINTS.RECIPES, recipeData);
       
-      if (response.success) {
-        const savedRecipe = response.data;
-        
-        // Optimistic update - add recipe immediately
-        setMyRecipes(prev => [...prev, savedRecipe]);
-        
-        console.log("Saved draft successfully!");
-        setSuccessMessage("Recipe saved as draft");
-        setShowSuccessMessage(true);
-        resetForm();
-        
-        // Clear cache for recipes
-        apiClient.clearCacheForUrl(API_ENDPOINTS.RECIPES);
-        
-        // Refresh data
-        await loadData();
-      }
+      const savedRecipe = response as unknown as Recipe;
+      
+      setMyRecipes(prev => [...prev, savedRecipe]);
+      
+      console.log("Saved draft successfully!");
+      setSuccessMessage("Recipe saved as draft");
+      setShowSuccessMessage(true);
+      resetForm();
+      
+      apiClient.clearCacheForUrl(API_ENDPOINTS.RECIPES);
     } catch (error) {
       console.error('Error saving draft:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to save draft. Please try again.';
@@ -217,24 +206,17 @@ export function Recipes() {
       // Use apiClient for publishing recipe
       const response = await apiClient.post(API_ENDPOINTS.RECIPES, recipeData);
       
-      if (response.success) {
-        const savedRecipe = response.data;
-        
-        // Optimistic update - add recipe immediately
-        setMyRecipes(prev => [...prev, savedRecipe]);
-        setPublicRecipes(prev => [...prev, savedRecipe]);
-        
-        console.log("Published recipe successfully!");
-        setSuccessMessage("Recipe published successfully");
-        setShowSuccessMessage(true);
-        resetForm();
-        
-        // Clear cache for recipes
-        apiClient.clearCacheForUrl(API_ENDPOINTS.RECIPES);
-        
-        // Refresh data
-        await loadData();
-      }
+      const savedRecipe = response as unknown as Recipe;
+      
+      setMyRecipes(prev => [...prev, savedRecipe]);
+      setPublicRecipes(prev => [...prev, savedRecipe]);
+      
+      console.log("Published recipe successfully!");
+      setSuccessMessage("Recipe published successfully");
+      setShowSuccessMessage(true);
+      resetForm();
+      
+      apiClient.clearCacheForUrl(API_ENDPOINTS.RECIPES);
     } catch (error) {
       console.error('Error publishing recipe:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to publish recipe. Please try again.';
@@ -325,21 +307,14 @@ export function Recipes() {
       setMyRecipes(prev => prev.filter(r => r.id !== editingRecipe.id));
       setPublicRecipes(prev => prev.filter(r => r.id !== editingRecipe.id));
       
-      // Use apiClient for deleting recipe
-      const response = await apiClient.delete(`${API_ENDPOINTS.RECIPES}/${editingRecipe.id}`);
+      await apiClient.delete(`${API_ENDPOINTS.RECIPES}/${editingRecipe.id}`);
       
-      if (response.success) {
-        setShowDeleteConfirm(false);
-        setEditingRecipe(null);
-        setShowDetail(false);
-        setSelectedRecipe(null);
-        
-        // Clear cache for recipes
-        apiClient.clearCacheForUrl(API_ENDPOINTS.RECIPES);
-        
-        // Refresh data
-        await loadData();
-      }
+      setShowDeleteConfirm(false);
+      setEditingRecipe(null);
+      setShowDetail(false);
+      setSelectedRecipe(null);
+      
+      apiClient.clearCacheForUrl(API_ENDPOINTS.RECIPES);
     } catch (error) {
       console.error('Error deleting recipe:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete recipe. Please try again.';
@@ -374,25 +349,18 @@ export function Recipes() {
       // Use apiClient for updating recipe
       const response = await apiClient.put(`${API_ENDPOINTS.RECIPES}/${editingDetailRecipe.id}`, recipeData);
       
-      if (response.success) {
-        const updatedRecipe = response.data;
-        
-        // Optimistic update - update recipe immediately
-        setMyRecipes(prev => prev.map(r => r.id === editingDetailRecipe.id ? updatedRecipe : r));
-        setPublicRecipes(prev => prev.map(r => r.id === editingDetailRecipe.id ? updatedRecipe : r));
-        setSelectedRecipe(updatedRecipe);
-        
-        setSuccessMessage("Recipe updated successfully");
-        setShowSuccessMessage(true);
-        setIsDetailEditing(false);
-        setEditingDetailRecipe(null);
-        
-        // Clear cache for recipes
-        apiClient.clearCacheForUrl(API_ENDPOINTS.RECIPES);
-        
-        // Refresh data
-        await loadData();
-      }
+      const updatedRecipe = response as unknown as Recipe;
+      
+      setMyRecipes(prev => prev.map(r => r.id === editingDetailRecipe.id ? updatedRecipe : r));
+      setPublicRecipes(prev => prev.map(r => r.id === editingDetailRecipe.id ? updatedRecipe : r));
+      setSelectedRecipe(updatedRecipe);
+      
+      setSuccessMessage("Recipe updated successfully");
+      setShowSuccessMessage(true);
+      setIsDetailEditing(false);
+      setEditingDetailRecipe(null);
+      
+      apiClient.clearCacheForUrl(API_ENDPOINTS.RECIPES);
     } catch (error) {
       console.error('Error updating recipe:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update recipe. Please try again.';
@@ -427,25 +395,18 @@ export function Recipes() {
       // Use apiClient for updating recipe
       const response = await apiClient.put(`${API_ENDPOINTS.RECIPES}/${editingRecipe.id}`, recipeData);
       
-      if (response.success) {
-        const updatedRecipe = response.data;
-        
-        // Optimistic update - update recipe immediately
-        setMyRecipes(prev => prev.map(r => r.id === editingRecipe.id ? updatedRecipe : r));
-        setPublicRecipes(prev => prev.map(r => r.id === editingRecipe.id ? updatedRecipe : r));
-        
-        console.log("Updated recipe successfully!");
-        alert("Recipe updated successfully");
-        resetForm();
-        setIsEditing(false);
-        setEditingRecipe(null);
-        
-        // Clear cache for recipes
-        apiClient.clearCacheForUrl(API_ENDPOINTS.RECIPES);
-        
-        // Refresh data
-        await loadData();
-      }
+      const updatedRecipe = response as unknown as Recipe;
+      
+      setMyRecipes(prev => prev.map(r => r.id === editingRecipe.id ? updatedRecipe : r));
+      setPublicRecipes(prev => prev.map(r => r.id === editingRecipe.id ? updatedRecipe : r));
+      
+      console.log("Updated recipe successfully!");
+      alert("Recipe updated successfully");
+      resetForm();
+      setIsEditing(false);
+      setEditingRecipe(null);
+      
+      apiClient.clearCacheForUrl(API_ENDPOINTS.RECIPES);
     } catch (error) {
       console.error('Error updating recipe:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update recipe. Please try again.';

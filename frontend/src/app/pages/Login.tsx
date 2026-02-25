@@ -44,15 +44,13 @@ export function Login() {
         });
 
         if (response.success) {
-          // Registration successful, auto login
           const loginResponse = await apiClient.post(API_ENDPOINTS.USERS_LOGIN, {
             username: trimmedUsername,
             password
           });
 
           if (loginResponse.success) {
-            // Only save user info, don't load business data
-            login(loginResponse.data);
+            login(loginResponse.user);
             navigate("/");
           } else {
             setError("Registration successful but login failed");
@@ -61,18 +59,15 @@ export function Login() {
           setError(response.message || "Registration failed");
         }
       } else {
-        // Login logic
         const trimmedUsername = username.trim();
 
-        // Use apiClient for login
         const response = await apiClient.post(API_ENDPOINTS.USERS_LOGIN, {
           username: trimmedUsername,
           password
         });
 
         if (response.success) {
-          // Only save user info, business data will be loaded lazily
-          login(response.data);
+          login(response.user);
           navigate("/");
         } else {
           setError(response.message || "Invalid username or password");

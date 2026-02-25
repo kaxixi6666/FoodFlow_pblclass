@@ -26,25 +26,22 @@ export function Inventory() {
 
   const fetchInventory = useCallback(async () => {
     try {
-      // Use apiClient for inventory data
       const response = await apiClient.get(API_ENDPOINTS.INVENTORY);
       
-      if (response.success) {
-        const data = response.data;
-        
-        const inventoryItems: InventoryItem[] = data.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          category: item.category,
-          lastUpdated: item.lastUpdated,
-          selected: false,
-          editing: false
-        }));
-        
-        inventoryItems.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
-        
-        setInventory(inventoryItems);
-      }
+      const data = Array.isArray(response) ? response : (response.data || []);
+      
+      const inventoryItems: InventoryItem[] = data.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        lastUpdated: item.lastUpdated,
+        selected: false,
+        editing: false
+      }));
+      
+      inventoryItems.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
+      
+      setInventory(inventoryItems);
     } catch (error) {
       console.error('Error fetching inventory:', error);
       if (error instanceof Error && error.message.includes('400')) {
@@ -59,7 +56,8 @@ export function Inventory() {
     fetchInventory();
   }, [fetchInventory]);
 
-  const selectedCount = inventory.filter(item => item.selected).length;
+  const selectedItems = useMemo(() => inventory.filter(item => item.selected), [inventory]);
+  const selectedCount = selectedItems.length;
   const allSelected = inventory.length > 0 && selectedCount === inventory.length;
 
   const toggleSelectAll = useCallback(() => {
@@ -73,13 +71,11 @@ export function Inventory() {
   }, [inventory]);
 
   const clearSelected = async () => {
-    const selectedItems = inventory.filter(item => item.selected);
     const selectedIds = selectedItems.map(item => item.id);
     
     setIsDeleting(prev => new Set([...prev, ...selectedIds]));
     
     try {
-      // Use apiClient for batch deletion
       const deletePromises = selectedItems.map(item => 
         apiClient.delete(`${API_ENDPOINTS.INVENTORY}/${item.id}`)
       );

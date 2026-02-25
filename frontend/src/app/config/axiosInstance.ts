@@ -13,6 +13,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://foodflow-pblc
 interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
+  user?: T;
   message?: string;
   error?: string;
 }
