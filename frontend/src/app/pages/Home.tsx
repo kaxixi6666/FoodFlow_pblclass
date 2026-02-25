@@ -98,24 +98,53 @@ export function Home() {
       console.log('Detected ingredients response:', response);
       
       // Parse response to get detected items
-      let detectedItems = [];
+      let detectedItems: DetectedIngredient[] = [];
       
       try {
-        if (response.scannedItems) {
+        // Handle result field with markdown JSON string (primary format)
+        if (response.result) {
+          const rawResult = response.result;
+          console.log('Raw AI result:', rawResult);
+          
+          // Remove markdown code block markers
+          const cleanResult = rawResult
+            .replace(/```json/g, '')
+            .replace(/```/g, '')
+            .trim();
+          
+          console.log('Cleaned result:', cleanResult);
+          
+          // Parse JSON string
+          const parsedResult = JSON.parse(cleanResult);
+          console.log('Parsed result:', parsedResult);
+          
+          // Ensure it's an array
+          if (Array.isArray(parsedResult)) {
+            detectedItems = parsedResult.map((item: string, index: number) => ({
+              id: index + 1,
+              name: item,
+              status: "matched" as const,
+              editing: false
+            }));
+          } else {
+            console.error('Parsed result is not an array:', parsedResult);
+          }
+        } else if (response.scannedItems) {
           // Handle string array format from backend
           detectedItems = response.scannedItems.map((item: string, index: number) => ({
             id: index + 1,
-            name: item
+            name: item,
+            status: "matched" as const,
+            editing: false
           }));
         } else if (response.detectedItems) {
           console.log('Processing detectedItems:', response.detectedItems);
           console.log('Is detectedItems an array?', Array.isArray(response.detectedItems));
-          console.log('Does detectedItems have result property?', 'result' in response.detectedItems);
           
-          // Handle object with result field (AI response with markdown)
           if (typeof response.detectedItems === 'object' && response.detectedItems !== null && 'result' in response.detectedItems) {
+            // Handle object with result field (AI response with markdown)
             const rawResult = response.detectedItems.result;
-            console.log('Raw AI result:', rawResult);
+            console.log('Raw AI result from detectedItems:', rawResult);
             
             // Remove markdown code block markers
             const cleanResult = rawResult
@@ -133,7 +162,9 @@ export function Home() {
             if (Array.isArray(parsedResult)) {
               detectedItems = parsedResult.map((item: string, index: number) => ({
                 id: index + 1,
-                name: item
+                name: item,
+                status: "matched" as const,
+                editing: false
               }));
             } else {
               console.error('Parsed result is not an array:', parsedResult);
@@ -143,13 +174,16 @@ export function Home() {
             console.log('Processing detectedItems as array:', response.detectedItems);
             detectedItems = response.detectedItems.map((item: string, index: number) => ({
               id: index + 1,
-              name: item
+              name: item,
+              status: "matched" as const,
+              editing: false
             }));
           } else {
-            console.error('detectedItems is neither an object with result nor an array:', response.detectedItems);
+            console.error('detectedItems has unexpected format:', response.detectedItems);
           }
         } else {
           console.error('No detected items found in response:', response);
+          toast.error('No ingredients detected. Please try again.');
         }
       } catch (parseError) {
         console.error('Error parsing AI response:', parseError);
@@ -157,16 +191,10 @@ export function Home() {
         throw parseError;
       }
       
-      // Convert detected items to our format
-      const mockIngredients: DetectedIngredient[] = detectedItems.map((item: any, index: number) => ({
-        id: item.id || index + 1,
-        name: item.name || item,
-        status: "matched" as const,
-        editing: false
-      }));
-      
-      setDetectedIngredients(mockIngredients);
-      setUploadMessage(`Successfully detected ${mockIngredients.length} ingredients`);
+      // Update state with detected ingredients
+      console.log('Setting detectedIngredients:', detectedItems);
+      setDetectedIngredients(detectedItems);
+      setUploadMessage(`Successfully detected ${detectedItems.length} ingredients`);
       
     } catch (error) {
       console.error('Error analyzing files:', error);
