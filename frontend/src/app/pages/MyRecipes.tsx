@@ -621,6 +621,19 @@ export function MyRecipes() {
                       </div>
                     </div>
                   </div>
+
+                  <div className="mt-6">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate('/planning', { state: { recipeToAdd: recipe } });
+                      }}
+                      className="w-full py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      Add to Plan
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
