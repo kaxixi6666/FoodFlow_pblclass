@@ -108,8 +108,12 @@ export function Home() {
             name: item
           }));
         } else if (response.detectedItems) {
+          console.log('Processing detectedItems:', response.detectedItems);
+          console.log('Is detectedItems an array?', Array.isArray(response.detectedItems));
+          console.log('Does detectedItems have result property?', 'result' in response.detectedItems);
+          
           // Handle object with result field (AI response with markdown)
-          if (response.detectedItems.result) {
+          if (typeof response.detectedItems === 'object' && response.detectedItems !== null && 'result' in response.detectedItems) {
             const rawResult = response.detectedItems.result;
             console.log('Raw AI result:', rawResult);
             
@@ -136,8 +140,16 @@ export function Home() {
             }
           } else if (Array.isArray(response.detectedItems)) {
             // Handle direct array format
-            detectedItems = response.detectedItems;
+            console.log('Processing detectedItems as array:', response.detectedItems);
+            detectedItems = response.detectedItems.map((item: string, index: number) => ({
+              id: index + 1,
+              name: item
+            }));
+          } else {
+            console.error('detectedItems is neither an object with result nor an array:', response.detectedItems);
           }
+        } else {
+          console.error('No detected items found in response:', response);
         }
       } catch (parseError) {
         console.error('Error parsing AI response:', parseError);
