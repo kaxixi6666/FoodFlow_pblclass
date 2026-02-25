@@ -1032,15 +1032,15 @@ export function MyRecipes() {
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
-                        <span>Prep: {recipe.prepTime || 0}</span>
+                        <span>{recipe.prepTime || 0}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
-                        <span>Cook: {recipe.cookTime || 0}</span>
+                        <span>{recipe.cookTime || 0}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Users className="w-4 h-4" />
-                        <span>Servings: {recipe.servings || 0}</span>
+                        <span>{recipe.servings || 0}</span>
                       </div>
                     </div>
                     {recipe.status === 'public' && (
