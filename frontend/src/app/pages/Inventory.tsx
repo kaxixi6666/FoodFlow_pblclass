@@ -1,8 +1,8 @@
 import { Search, ChevronDown, ChevronUp, Trash2, X, Plus, Minus } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Button } from "../components/ui/button";
-import { API_ENDPOINTS, fetchAPI } from "../config/api";
+import { API_ENDPOINTS, apiClient } from "../config/api";
 import { dataService } from "../services/dataService";
 
 interface InventoryItem {
@@ -26,20 +26,25 @@ export function Inventory() {
 
   const fetchInventory = useCallback(async () => {
     try {
-      const data = await dataService.fetchInventoryData();
+      // Use apiClient for inventory data
+      const response = await apiClient.get(API_ENDPOINTS.INVENTORY);
       
-      const inventoryItems: InventoryItem[] = data.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        category: item.category,
-        lastUpdated: item.lastUpdated,
-        selected: false,
-        editing: false
-      }));
-      
-      inventoryItems.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
-      
-      setInventory(inventoryItems);
+      if (response.success) {
+        const data = response.data;
+        
+        const inventoryItems: InventoryItem[] = data.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          lastUpdated: item.lastUpdated,
+          selected: false,
+          editing: false
+        }));
+        
+        inventoryItems.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
+        
+        setInventory(inventoryItems);
+      }
     } catch (error) {
       console.error('Error fetching inventory:', error);
       if (error instanceof Error && error.message.includes('400')) {
@@ -74,15 +79,18 @@ export function Inventory() {
     setIsDeleting(prev => new Set([...prev, ...selectedIds]));
     
     try {
+      // Use apiClient for batch deletion
       const deletePromises = selectedItems.map(item => 
-        fetchAPI(`${API_ENDPOINTS.INVENTORY}/${item.id}`, {
-          method: 'DELETE'
-        })
+        apiClient.delete(`${API_ENDPOINTS.INVENTORY}/${item.id}`)
       );
       
       await Promise.all(deletePromises);
       
+      // Optimistic update - remove items immediately
       setInventory(inventory.filter(item => !item.selected));
+      
+      // Clear cache for inventory
+      apiClient.clearCacheForUrl(API_ENDPOINTS.INVENTORY);
     } catch (error) {
       console.error('Error deleting items:', error);
       alert('Failed to delete items. Please try again.');
@@ -100,15 +108,19 @@ export function Inventory() {
     setIsDeleting(prev => new Set([...prev, id]));
     
     const originalInventory = [...inventory];
+    // Optimistic update - remove item immediately
     setInventory(inventory.filter(item => item.id !== id));
     
     try {
-      await fetchAPI(`${API_ENDPOINTS.INVENTORY}/${id}`, {
-        method: 'DELETE'
-      });
+      // Use apiClient for deletion
+      await apiClient.delete(`${API_ENDPOINTS.INVENTORY}/${id}`);
+      
+      // Clear cache for inventory
+      apiClient.clearCacheForUrl(API_ENDPOINTS.INVENTORY);
     } catch (error) {
       console.error('Error deleting item:', error);
       alert('Failed to delete item. Please try again.');
+      // Rollback on error
       setInventory(originalInventory);
     } finally {
       setIsDeleting(prev => {
@@ -119,11 +131,14 @@ export function Inventory() {
     }
   };
 
-  let filteredInventory = inventory.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "All Categories" || item.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Use useMemo for filtered inventory to avoid unnecessary recalculations
+  const filteredInventory = useMemo(() => {
+    return inventory.filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === "All Categories" || item.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [inventory, searchQuery, selectedCategory]);
 
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -134,17 +149,21 @@ export function Inventory() {
   }, []);
 
   const toggleSortOrder = useCallback(() => {
-    const newSortOrder = sortOrder === "desc" ? "asc" : "desc";
-    setSortOrder(newSortOrder);
-    
-    const sortedInventory = [...inventory].sort((a, b) => {
-      const dateA = new Date(a.lastUpdated).getTime();
-      const dateB = new Date(b.lastUpdated).getTime();
-      return newSortOrder === "asc" ? dateA - dateB : dateB - dateA;
+    setSortOrder(prevOrder => {
+      const newSortOrder = prevOrder === "desc" ? "asc" : "desc";
+      
+      setInventory(prevInventory => {
+        const sortedInventory = [...prevInventory].sort((a, b) => {
+          const dateA = new Date(a.lastUpdated).getTime();
+          const dateB = new Date(b.lastUpdated).getTime();
+          return newSortOrder === "asc" ? dateA - dateB : dateB - dateA;
+        });
+        return sortedInventory;
+      });
+      
+      return newSortOrder;
     });
-    
-    setInventory(sortedInventory);
-  }, [inventory, sortOrder]);
+  }, []);
 
   if (loading) {
     return (

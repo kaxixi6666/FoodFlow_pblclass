@@ -1,8 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Upload, Camera, Scan, Search, Check, X, Edit2, Plus, FileText, Image } from "lucide-react";
 import { toast } from "sonner";
-import { API_ENDPOINTS, fetchAPI, convertImageToBase64, analyzeImageWithZhipuAI } from "../config/api";
+import { API_ENDPOINTS, apiClient, convertImageToBase64, analyzeImageWithZhipuAI } from "../config/api";
 
 interface DetectedIngredient {
   id: number;
@@ -40,7 +40,7 @@ export function Home() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFiles = (files: FileList) => {
+  const handleFiles = useCallback((files: FileList) => {
     const validFiles = Array.from(files).filter(file => {
       const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
       return validTypes.includes(file.type) && file.size <= 10 * 1024 * 1024; // 10MB limit
@@ -59,29 +59,29 @@ export function Home() {
       setSelectedFiles(prev => [...prev, ...validFiles]);
       setUploadMessage(`Added ${validFiles.length} file(s)`);
     }
-  };
+  }, []);
 
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       handleFiles(e.target.files);
     }
-  };
+  }, [handleFiles]);
 
-  const handleScanReceiptClick = () => {
+  const handleScanReceiptClick = useCallback(() => {
     setCurrentScenario("receipt");
     fileInputRef.current?.click();
-  };
+  }, []);
 
-  const handleScanFridgeClick = () => {
+  const handleScanFridgeClick = useCallback(() => {
     setCurrentScenario("fridge");
     fileInputRef.current?.click();
-  };
+  }, []);
 
-  const removeFile = (index: number) => {
+  const removeFile = useCallback((index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
-  const handleSubmitFiles = async () => {
+  const handleSubmitFiles = useCallback(async () => {
     if (selectedFiles.length === 0) return;
     
     setUploading(true);
@@ -136,9 +136,9 @@ export function Home() {
     } finally {
       setUploading(false);
     }
-  };
+  }, [selectedFiles, currentScenario]);
 
-  const handleConfirmAdd = async () => {
+  const handleConfirmAdd = useCallback(async () => {
     const ingredientsToAdd = [...detectedIngredients, ...manualIngredients];
     if (ingredientsToAdd.length === 0) return;
     
@@ -154,13 +154,12 @@ export function Home() {
         };
       });
       
-      await fetchAPI(`${API_ENDPOINTS.INVENTORY}/batch`, {
-        method: 'POST',
-        body: JSON.stringify({
-          items: inventoryRequests
-        })
+      // Use apiClient for batch addition
+      await apiClient.post(`${API_ENDPOINTS.INVENTORY}/batch`, {
+        items: inventoryRequests
       });
       
+      // Optimistic update - clear form immediately
       setDetectedIngredients([]);
       setManualIngredients([]);
       setSelectedFiles([]);
@@ -175,48 +174,51 @@ export function Home() {
     } catch (error) {
       console.error('Error adding to inventory:', error);
       setUploadMessage('Error adding to inventory. Please try again.');
+      // Error state is already handled by the UI
     } finally {
       setUploading(false);
     }
-  };
+  }, [detectedIngredients, manualIngredients, navigate]);
 
-  const handleCancelAdd = () => {
+  const handleCancelAdd = useCallback(() => {
     // Clear form without adding to database
     setDetectedIngredients([]);
     setManualIngredients([]);
     setSelectedFiles([]);
     setUploadMessage("");
-  };
+  }, []);
 
-  const toggleEdit = (id: number) => {
-    setDetectedIngredients(detectedIngredients.map(ing => 
+  const toggleEdit = useCallback((id: number) => {
+    setDetectedIngredients(prevIngredients => prevIngredients.map(ing => 
       ing.id === id ? { ...ing, editing: !ing.editing } : ing
     ));
-  };
+  }, []);
 
-  const removeDetected = (id: number) => {
-    setDetectedIngredients(detectedIngredients.filter(ing => ing.id !== id));
-  };
+  const removeDetected = useCallback((id: number) => {
+    setDetectedIngredients(prevIngredients => prevIngredients.filter(ing => ing.id !== id));
+  }, []);
 
-  const addManualIngredient = (ingredient: typeof ingredientLibrary[0]) => {
+  const addManualIngredient = useCallback((ingredient: typeof ingredientLibrary[0]) => {
     const newIngredient: ManualIngredient = {
       id: Date.now(),
       name: ingredient.name,
       category: ingredient.category,
     };
-    setManualIngredients([...manualIngredients, newIngredient]);
+    setManualIngredients(prev => [...prev, newIngredient]);
     setSearchQuery("");
-  };
+  }, []);
 
-  const removeManualIngredient = (id: number) => {
-    setManualIngredients(manualIngredients.filter(ing => ing.id !== id));
-  };
+  const removeManualIngredient = useCallback((id: number) => {
+    setManualIngredients(prevIngredients => prevIngredients.filter(ing => ing.id !== id));
+  }, []);
 
-  const filteredLibrary = searchQuery
-    ? ingredientLibrary.filter(ing =>
-        ing.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : [];
+  const filteredLibrary = useMemo(() => {
+    return searchQuery
+      ? ingredientLibrary.filter(ing =>
+          ing.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : [];
+  }, [searchQuery]);
 
   return (
     <div className="grid grid-cols-5 gap-6">

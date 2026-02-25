@@ -1,10 +1,10 @@
 import { Search, Plus, Clock, Users, ChefHat, ChevronDown, ChevronUp, MoreVertical, PlusCircle, X, Clock3, Users2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { Button } from "../components/ui/button";
-import { API_ENDPOINTS, fetchAPI, fetchAPIWithResponse } from "../config/api";
+import { API_ENDPOINTS, apiClient } from "../config/api";
 import { dataService } from "../services/dataService";
 
 interface Ingredient {
@@ -63,10 +63,17 @@ export function MyRecipes() {
   const [detailStatus, setDetailStatus] = useState<"draft" | "public">("draft");
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [recipes, ingredients] = await dataService.fetchRecipesData();
+  const loadData = useCallback(async () => {
+    try {
+      // Use apiClient for recipes and ingredients data
+      const [recipesResponse, ingredientsResponse] = await Promise.all([
+        apiClient.get(API_ENDPOINTS.RECIPES),
+        apiClient.get(API_ENDPOINTS.INGREDIENTS)
+      ]);
+      
+      if (recipesResponse.success && ingredientsResponse.success) {
+        const recipes = recipesResponse.data;
+        const ingredients = ingredientsResponse.data;
         
         const draftRecipes = recipes
           .filter((recipe: Recipe) => recipe.status === 'draft')
@@ -85,13 +92,15 @@ export function MyRecipes() {
         
         setMyRecipes([...draftRecipes, ...publicRecipesList]);
         setAllIngredients(ingredients);
-      } catch (error) {
-        console.error('Error fetching recipes and ingredients:', error);
       }
-    };
-
-    loadData();
+    } catch (error) {
+      console.error('Error fetching recipes and ingredients:', error);
+    }
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -109,13 +118,13 @@ export function MyRecipes() {
     };
   }, [showMenu]);
 
-  const toggleIngredient = (ingredient: string) => {
+  const toggleIngredient = useCallback((ingredient: string) => {
     setSelectedIngredients(prev =>
       prev.includes(ingredient)
         ? prev.filter(item => item !== ingredient)
         : [...prev, ingredient]
     );
-  };
+  }, []);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
@@ -136,12 +145,8 @@ export function MyRecipes() {
     try {
       const ingredientsWithIds = selectedIngredients.map(ingredientName => {
         const ingredient = allIngredients.find(ing => ing.name === ingredientName);
-        console.log(`Looking for ingredient: "${ingredientName}", found:`, ingredient);
         return ingredient ? { id: ingredient.id, name: ingredient.name } : { name: ingredientName };
       });
-      
-      console.log("Selected ingredients:", selectedIngredients);
-      console.log("All ingredients from DB:", allIngredients);
       
       const recipeData = {
         name: recipeName.trim(),
@@ -154,67 +159,26 @@ export function MyRecipes() {
         ingredients: ingredientsWithIds
       };
       
-      console.log("Sending recipe data:", JSON.stringify(recipeData, null, 2));
+      // Use apiClient for saving recipe
+      const response = await apiClient.post(API_ENDPOINTS.RECIPES, recipeData);
       
-      const response = await fetchAPIWithResponse(API_ENDPOINTS.RECIPES, {
-        method: 'POST',
-        body: JSON.stringify(recipeData)
-      });
-      
-      console.log("Response status:", response.status);
-      console.log("Response ok:", response.ok);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error response:", errorText);
+      if (response.success) {
+        const savedRecipe = response.data;
         
-        let errorMessage = 'Failed to save recipe';
-        try {
-          const errorData = JSON.parse(errorText);
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          } else if (errorData.error) {
-            errorMessage = errorData.error;
-          }
-        } catch (e) {
-          errorMessage = `Failed to save recipe (${response.status}: ${response.statusText})`;
-        }
+        // Optimistic update - add recipe immediately
+        setMyRecipes(prev => [...prev, savedRecipe]);
         
-        throw new Error(errorMessage);
+        console.log("Saved draft successfully!");
+        setSuccessMessage("Recipe saved as draft");
+        setShowSuccessMessage(true);
+        resetForm();
+        
+        // Clear cache for recipes
+        apiClient.clearCacheForUrl(API_ENDPOINTS.RECIPES);
+        
+        // Refresh data
+        await loadData();
       }
-      
-      const savedRecipe = await response.json();
-      
-      setMyRecipes(prev => [...prev, savedRecipe]);
-      console.log("Saved draft successfully!");
-      setSuccessMessage("Recipe saved as draft");
-      setShowSuccessMessage(true);
-      resetForm();
-      
-      const fetchRecipes = async () => {
-        try {
-          const data = await fetchAPI(API_ENDPOINTS.RECIPES);
-          const draftRecipes = data
-            .filter((recipe: Recipe) => recipe.status === 'draft')
-            .sort((a: Recipe, b: Recipe) => {
-              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-              return dateB - dateA;
-            });
-          const publicRecipesList = data
-            .filter((recipe: Recipe) => recipe.status === 'public')
-            .sort((a: Recipe, b: Recipe) => {
-              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-              return dateB - dateA;
-            });
-          setMyRecipes([...draftRecipes, ...publicRecipesList]);
-        } catch (error) {
-          console.error('Error fetching recipes:', error);
-        }
-      };
-      
-      fetchRecipes();
     } catch (error) {
       console.error('Error saving draft:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to save draft. Please try again.';
@@ -245,63 +209,26 @@ export function MyRecipes() {
         ingredients: ingredientsWithIds
       };
       
-      const response = await fetchAPIWithResponse(API_ENDPOINTS.RECIPES, {
-        method: 'POST',
-        body: JSON.stringify(recipeData)
-      });
+      // Use apiClient for publishing recipe
+      const response = await apiClient.post(API_ENDPOINTS.RECIPES, recipeData);
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error response:", errorText);
+      if (response.success) {
+        const savedRecipe = response.data;
         
-        let errorMessage = 'Failed to publish recipe';
-        try {
-          const errorData = JSON.parse(errorText);
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          } else if (errorData.error) {
-            errorMessage = errorData.error;
-          }
-        } catch (e) {
-          errorMessage = `Failed to publish recipe (${response.status}: ${response.statusText})`;
-        }
+        // Optimistic update - add recipe immediately
+        setMyRecipes(prev => [...prev, savedRecipe]);
         
-        throw new Error(errorMessage);
+        console.log("Published recipe successfully!");
+        setSuccessMessage("Recipe published successfully");
+        setShowSuccessMessage(true);
+        resetForm();
+        
+        // Clear cache for recipes
+        apiClient.clearCacheForUrl(API_ENDPOINTS.RECIPES);
+        
+        // Refresh data
+        await loadData();
       }
-      
-      const savedRecipe = await response.json();
-      
-      setMyRecipes(prev => [...prev, savedRecipe]);
-      console.log("Published recipe successfully!");
-      setSuccessMessage("Recipe published successfully");
-      setShowSuccessMessage(true);
-      resetForm();
-      
-      const fetchRecipes = async () => {
-        try {
-          const data = await fetchAPI(API_ENDPOINTS.RECIPES);
-          
-          const draftRecipes = data
-            .filter((recipe: Recipe) => recipe.status === 'draft')
-            .sort((a: Recipe, b: Recipe) => {
-              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-              return dateB - dateA;
-            });
-          const publicRecipesList = data
-            .filter((recipe: Recipe) => recipe.status === 'public')
-            .sort((a: Recipe, b: Recipe) => {
-              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-              return dateB - dateA;
-            });
-          setMyRecipes([...draftRecipes, ...publicRecipesList]);
-        } catch (error) {
-          console.error('Error fetching recipes:', error);
-        }
-      };
-      
-      fetchRecipes();
     } catch (error) {
       console.error('Error publishing recipe:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to publish recipe. Please try again.';
@@ -388,59 +315,25 @@ export function MyRecipes() {
     if (!editingRecipe) return;
     
     try {
-      const response = await fetchAPI(`${API_ENDPOINTS.RECIPES}/${editingRecipe.id}`, {
-        method: 'DELETE'
-      });
+      // Optimistic update - remove recipe immediately
+      const originalRecipes = [...myRecipes];
+      setMyRecipes(prev => prev.filter(r => r.id !== editingRecipe.id));
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error response:", errorText);
+      // Use apiClient for deleting recipe
+      const response = await apiClient.delete(`${API_ENDPOINTS.RECIPES}/${editingRecipe.id}`);
+      
+      if (response.success) {
+        setShowDeleteConfirm(false);
+        setEditingRecipe(null);
+        setShowDetail(false);
+        setSelectedRecipe(null);
         
-        let errorMessage = 'Failed to delete recipe';
-        try {
-          const errorData = JSON.parse(errorText);
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          } else if (errorData.error) {
-            errorMessage = errorData.error;
-          }
-        } catch (e) {
-          errorMessage = `Failed to delete recipe (${response.status}: ${response.statusText})`;
-        }
+        // Clear cache for recipes
+        apiClient.clearCacheForUrl(API_ENDPOINTS.RECIPES);
         
-        throw new Error(errorMessage);
+        // Refresh data
+        await loadData();
       }
-      
-      setShowDeleteConfirm(false);
-      setEditingRecipe(null);
-      setShowDetail(false);
-      setSelectedRecipe(null);
-      
-      const fetchRecipes = async () => {
-        try {
-          const data = await fetchAPI(API_ENDPOINTS.RECIPES);
-          
-          const draftRecipes = data
-            .filter((recipe: Recipe) => recipe.status === 'draft')
-            .sort((a: Recipe, b: Recipe) => {
-              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-              return dateB - dateA;
-            });
-          const publicRecipesList = data
-            .filter((recipe: Recipe) => recipe.status === 'public')
-            .sort((a: Recipe, b: Recipe) => {
-              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-              return dateB - dateA;
-            });
-          setMyRecipes([...draftRecipes, ...publicRecipesList]);
-        } catch (error) {
-          console.error('Error fetching recipes:', error);
-        }
-      };
-      
-      fetchRecipes();
     } catch (error) {
       console.error('Error deleting recipe:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete recipe. Please try again.';
@@ -473,62 +366,27 @@ export function MyRecipes() {
         ingredients: ingredientsWithIds
       };
       
-      const response = await fetchAPIWithResponse(`${API_ENDPOINTS.RECIPES}/${editingDetailRecipe.id}`, { method: 'PUT', body: JSON.stringify(recipeData) });
+      // Use apiClient for updating recipe
+      const response = await apiClient.put(`${API_ENDPOINTS.RECIPES}/${editingDetailRecipe.id}`, recipeData);
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error response:", errorText);
+      if (response.success) {
+        const updatedRecipe = response.data;
         
-        let errorMessage = 'Failed to update recipe';
-        try {
-          const errorData = JSON.parse(errorText);
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          } else if (errorData.error) {
-            errorMessage = errorData.error;
-          }
-        } catch (e) {
-          errorMessage = `Failed to update recipe (${response.status}: ${response.statusText})`;
-        }
+        // Optimistic update - update recipe immediately
+        setMyRecipes(prev => prev.map(r => r.id === editingDetailRecipe.id ? updatedRecipe : r));
+        setSelectedRecipe(updatedRecipe);
         
-        throw new Error(errorMessage);
+        setSuccessMessage("Recipe updated successfully");
+        setShowSuccessMessage(true);
+        setIsDetailEditing(false);
+        setEditingDetailRecipe(null);
+        
+        // Clear cache for recipes
+        apiClient.clearCacheForUrl(API_ENDPOINTS.RECIPES);
+        
+        // Refresh data
+        await loadData();
       }
-      
-      const updatedRecipe = await response.json();
-      
-      setMyRecipes(prev => prev.map(r => r.id === editingDetailRecipe.id ? updatedRecipe : r));
-      setSelectedRecipe(updatedRecipe);
-      
-      setSuccessMessage("Recipe updated successfully");
-      setShowSuccessMessage(true);
-      setIsDetailEditing(false);
-      setEditingDetailRecipe(null);
-      
-      const fetchRecipes = async () => {
-        try {
-          const data = await fetchAPI(API_ENDPOINTS.RECIPES);
-          
-          const draftRecipes = data
-            .filter((recipe: Recipe) => recipe.status === 'draft')
-            .sort((a: Recipe, b: Recipe) => {
-              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-              return dateB - dateA;
-            });
-          const publicRecipesList = data
-            .filter((recipe: Recipe) => recipe.status === 'public')
-            .sort((a: Recipe, b: Recipe) => {
-              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-              return dateB - dateA;
-            });
-          setMyRecipes([...draftRecipes, ...publicRecipesList]);
-        } catch (error) {
-          console.error('Error fetching recipes:', error);
-        }
-      };
-      
-      fetchRecipes();
     } catch (error) {
       console.error('Error updating recipe:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update recipe. Please try again.';
@@ -547,12 +405,8 @@ export function MyRecipes() {
     try {
       const ingredientsWithIds = selectedIngredients.map(ingredientName => {
         const ingredient = allIngredients.find(ing => ing.name === ingredientName);
-        console.log(`Looking for ingredient: "${ingredientName}", found:`, ingredient);
         return ingredient ? { id: ingredient.id, name: ingredient.name } : { name: ingredientName };
       });
-      
-      console.log("Selected ingredients:", selectedIngredients);
-      console.log("All ingredients from DB:", allIngredients);
       
       const recipeData = {
         name: recipeName.trim(),
@@ -564,69 +418,27 @@ export function MyRecipes() {
         ingredients: ingredientsWithIds
       };
       
-      console.log("Updating recipe data:", JSON.stringify(recipeData, null, 2));
+      // Use apiClient for updating recipe
+      const response = await apiClient.put(`${API_ENDPOINTS.RECIPES}/${editingRecipe.id}`, recipeData);
       
-      const response = await fetchAPIWithResponse(`${API_ENDPOINTS.RECIPES}/${editingRecipe.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(recipeData)
-      });
-      
-      console.log("Response status:", response.status);
-      console.log("Response ok:", response.ok);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error response:", errorText);
+      if (response.success) {
+        const updatedRecipe = response.data;
         
-        let errorMessage = 'Failed to update recipe';
-        try {
-          const errorData = JSON.parse(errorText);
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          } else if (errorData.error) {
-            errorMessage = errorData.error;
-          }
-        } catch (e) {
-          errorMessage = `Failed to update recipe (${response.status}: ${response.statusText})`;
-        }
+        // Optimistic update - update recipe immediately
+        setMyRecipes(prev => prev.map(r => r.id === editingRecipe.id ? updatedRecipe : r));
         
-        throw new Error(errorMessage);
+        console.log("Updated recipe successfully!");
+        alert("Recipe updated successfully");
+        resetForm();
+        setIsEditing(false);
+        setEditingRecipe(null);
+        
+        // Clear cache for recipes
+        apiClient.clearCacheForUrl(API_ENDPOINTS.RECIPES);
+        
+        // Refresh data
+        await loadData();
       }
-      
-      const updatedRecipe = await response.json();
-      
-      setMyRecipes(prev => prev.map(r => r.id === editingRecipe.id ? updatedRecipe : r));
-      console.log("Updated recipe successfully!");
-      alert("Recipe updated successfully");
-      resetForm();
-      setIsEditing(false);
-      setEditingRecipe(null);
-      
-      const fetchRecipes = async () => {
-        try {
-          const data = await fetchAPI(API_ENDPOINTS.RECIPES);
-          
-          const draftRecipes = data
-            .filter((recipe: Recipe) => recipe.status === 'draft')
-            .sort((a: Recipe, b: Recipe) => {
-              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-              return dateB - dateA;
-            });
-          const publicRecipesList = data
-            .filter((recipe: Recipe) => recipe.status === 'public')
-            .sort((a: Recipe, b: Recipe) => {
-              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-              return dateB - dateA;
-            });
-          setMyRecipes([...draftRecipes, ...publicRecipesList]);
-        } catch (error) {
-          console.error('Error fetching recipes:', error);
-        }
-      };
-      
-      fetchRecipes();
     } catch (error) {
       console.error('Error updating recipe:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update recipe. Please try again.';

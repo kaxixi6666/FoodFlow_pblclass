@@ -4,7 +4,7 @@ import { Button } from "../components/ui/button";
 import { Label } from "../components/ui/label";
 import { useNavigate } from "react-router";
 import { useAuth } from "../components/AuthProvider";
-import { API_ENDPOINTS, fetchAPI } from "../config/api";
+import { API_ENDPOINTS, apiClient } from "../config/api";
 
 export function Login() {
   const [username, setUsername] = useState("");
@@ -36,27 +36,23 @@ export function Login() {
         const trimmedUsername = username.trim();
         const trimmedEmail = email.trim();
 
-        const response = await fetchAPI(API_ENDPOINTS.USERS_REGISTER, {
-          method: 'POST',
-          body: JSON.stringify({
-            username: trimmedUsername,
-            password,
-            email: trimmedEmail
-          })
+        // Use apiClient for registration
+        const response = await apiClient.post(API_ENDPOINTS.USERS_REGISTER, {
+          username: trimmedUsername,
+          password,
+          email: trimmedEmail
         });
 
         if (response.success) {
           // Registration successful, auto login
-          const loginResponse = await fetchAPI(API_ENDPOINTS.USERS_LOGIN, {
-            method: 'POST',
-            body: JSON.stringify({
-              username: trimmedUsername,
-              password
-            })
+          const loginResponse = await apiClient.post(API_ENDPOINTS.USERS_LOGIN, {
+            username: trimmedUsername,
+            password
           });
 
           if (loginResponse.success) {
-            login(loginResponse.user);
+            // Only save user info, don't load business data
+            login(loginResponse.data);
             navigate("/");
           } else {
             setError("Registration successful but login failed");
@@ -68,16 +64,15 @@ export function Login() {
         // Login logic
         const trimmedUsername = username.trim();
 
-        const response = await fetchAPI(API_ENDPOINTS.USERS_LOGIN, {
-          method: 'POST',
-          body: JSON.stringify({
-            username: trimmedUsername,
-            password
-          })
+        // Use apiClient for login
+        const response = await apiClient.post(API_ENDPOINTS.USERS_LOGIN, {
+          username: trimmedUsername,
+          password
         });
 
         if (response.success) {
-          login(response.user);
+          // Only save user info, business data will be loaded lazily
+          login(response.data);
           navigate("/");
         } else {
           setError(response.message || "Invalid username or password");

@@ -50,7 +50,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setLoading(false);
   }, []);
 
-  const login = (user: User) => {
+  const login = (userData: any) => {
+    // Handle both direct user object and apiClient response format
+    const user = userData?.id ? userData : userData?.data;
     setUser(user);
     localStorage.setItem("user", JSON.stringify(user));
   };

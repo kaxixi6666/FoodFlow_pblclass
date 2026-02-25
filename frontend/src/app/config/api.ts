@@ -1,19 +1,5 @@
-export const API_BASE_URL = 'https://foodflow-pblclass.onrender.com/api';
-
-console.log('API_BASE_URL:', API_BASE_URL);
-
-export const API_ENDPOINTS = {
-  INVENTORY: `${API_BASE_URL}/inventory`,
-  INGREDIENTS: `${API_BASE_URL}/ingredients`,
-  RECIPES: `${API_BASE_URL}/recipes`,
-  PUBLIC_RECIPES: `${API_BASE_URL}/recipes/public`,
-  RECIPE_INGREDIENTS: `${API_BASE_URL}/recipe-ingredients`,
-  USERS_REGISTER: `${API_BASE_URL}/users/register`,
-  USERS_LOGIN: `${API_BASE_URL}/users/login`,
-  USERS: `${API_BASE_URL}/users`,
-  MEAL_PLANS: `${API_BASE_URL}/meal-plans`,
-  SHOPPING_LIST: `${API_BASE_URL}/shopping-list`,
-};
+// Export API client from axiosInstance.ts
+export { apiClient, API_ENDPOINTS } from './axiosInstance';
 
 // Cache for user data
 let cachedUser: any = null;
@@ -23,101 +9,74 @@ export const clearUserCache = () => {
   cachedUser = null;
 };
 
+// Legacy fetchAPI function for backward compatibility
 export const fetchAPI = async (endpoint: string, options?: RequestInit) => {
-  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+  // Extract relative path from endpoint
+  const relativePath = endpoint.replace(/^https?:\/\/.+?\/api/, '');
   
-  // Get user from cache or localStorage
-  if (!cachedUser) {
-    try {
-      const userStr = localStorage.getItem('user');
-      cachedUser = userStr ? JSON.parse(userStr) : null;
-    } catch (error) {
-      console.error('Error parsing user from localStorage:', error);
-      cachedUser = null;
+  try {
+    // Use apiClient for requests
+    const method = options?.method || 'GET';
+    const data = options?.body ? JSON.parse(options.body as string) : undefined;
+    
+    let response;
+    switch (method) {
+      case 'GET':
+        response = await apiClient.get(relativePath);
+        break;
+      case 'POST':
+        response = await apiClient.post(relativePath, data);
+        break;
+      case 'PUT':
+        response = await apiClient.put(relativePath, data);
+        break;
+      case 'DELETE':
+        response = await apiClient.delete(relativePath);
+        break;
+      default:
+        response = await apiClient.get(relativePath);
     }
+    
+    return response;
+  } catch (error) {
+    console.error('fetchAPI error:', error);
+    throw error;
   }
-  
-  const userId = cachedUser?.id;
-  
-  console.log('fetchAPI - endpoint:', endpoint);
-  console.log('fetchAPI - user:', cachedUser);
-  console.log('fetchAPI - userId:', userId);
-  
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...options?.headers,
-  };
-  
-  // Add X-User-Id header if user is logged in
-  if (userId) {
-    (headers as any)['X-User-Id'] = userId.toString();
-    console.log('fetchAPI - Adding X-User-Id header:', userId);
-  } else {
-    console.log('fetchAPI - No userId available, user not logged in');
-  }
-  
-  console.log('fetchAPI - headers:', headers);
-  
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
-
-  console.log('fetchAPI - response status:', response.status);
-  console.log('fetchAPI - response ok:', response.ok);
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`API Error: ${response.status} - ${errorText}`);
-    throw new Error(`API request failed: ${response.status}`);
-  }
-
-  // Handle empty responses (e.g., 204 No Content)
-  const text = await response.text();
-  if (!text || text.trim() === '') {
-    return null;
-  }
-
-  return JSON.parse(text);
 };
 
 // New function to fetch and return Response object
 export const fetchAPIWithResponse = async (endpoint: string, options?: RequestInit) => {
-  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+  // This function is maintained for backward compatibility
+  // but internally uses the new apiClient
+  const relativePath = endpoint.replace(/^https?:\/\/.+?\/api/, '');
   
-  // Get user from localStorage and add userId to headers
-  let userId: number | undefined;
   try {
-    const userStr = localStorage.getItem('user');
-    const user = userStr ? JSON.parse(userStr) : null;
-    userId = user?.id;
+    const method = options?.method || 'GET';
+    const data = options?.body ? JSON.parse(options.body as string) : undefined;
+    
+    let response;
+    switch (method) {
+      case 'GET':
+        response = await apiClient.get(relativePath);
+        break;
+      case 'POST':
+        response = await apiClient.post(relativePath, data);
+        break;
+      case 'PUT':
+        response = await apiClient.put(relativePath, data);
+        break;
+      case 'DELETE':
+        response = await apiClient.delete(relativePath);
+        break;
+      default:
+        response = await apiClient.get(relativePath);
+    }
+    
+    return { data: response };
   } catch (error) {
-    console.error('Error parsing user from localStorage:', error);
-    userId = undefined;
+    console.error('fetchAPIWithResponse error:', error);
+    throw error;
   }
-  
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...options?.headers,
-  };
-  
-  // Add X-User-Id header if user is logged in
-  if (userId) {
-    (headers as any)['X-User-Id'] = userId.toString();
-  }
-  
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`API Error: ${response.status} - ${errorText}`);
-    throw new Error(`API request failed: ${response.status}`);
-  }
-
-  return response;
 };
 
 /**
