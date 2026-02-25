@@ -134,20 +134,47 @@ public class InventoryController {
                     return ResponseEntity.badRequest().body(error);
                 }
 
-                // Create ingredient
-                Ingredient ingredient = new Ingredient();
-                ingredient.setName(itemRequest.getName().trim());
-                ingredient.setCategory(itemRequest.getCategory() != null ? itemRequest.getCategory().trim() : "Uncategorized");
-                ingredient.setDescription(itemRequest.getDescription() != null ? itemRequest.getDescription().trim() : null);
-                entityManager.persist(ingredient);
+                // Check if ingredient already exists
+                List<Ingredient> existingIngredients = entityManager.createQuery(
+                    "SELECT i FROM Ingredient i WHERE i.name = :name", Ingredient.class
+                ).setParameter("name", itemRequest.getName().trim())
+                .getResultList();
 
-                // Create inventory
-                Inventory inventory = new Inventory();
-                inventory.setIngredient(ingredient);
-                inventory.setUserId(userId);
-                inventory.setLastUpdated(now);
-                inventory.setCreatedAt(now);
-                entityManager.persist(inventory);
+                Ingredient ingredient;
+                if (!existingIngredients.isEmpty()) {
+                    // Use existing ingredient
+                    ingredient = existingIngredients.get(0);
+                } else {
+                    // Create new ingredient
+                    ingredient = new Ingredient();
+                    ingredient.setName(itemRequest.getName().trim());
+                    ingredient.setCategory(itemRequest.getCategory() != null ? itemRequest.getCategory().trim() : "Uncategorized");
+                    ingredient.setDescription(itemRequest.getDescription() != null ? itemRequest.getDescription().trim() : null);
+                    entityManager.persist(ingredient);
+                }
+
+                // Check if inventory already exists for this user and ingredient
+                List<Inventory> existingInventories = entityManager.createQuery(
+                    "SELECT i FROM Inventory i WHERE i.userId = :userId AND i.ingredient.id = :ingredientId", Inventory.class
+                ).setParameter("userId", userId)
+                .setParameter("ingredientId", ingredient.getId())
+                .getResultList();
+
+                Inventory inventory;
+                if (!existingInventories.isEmpty()) {
+                    // Update existing inventory
+                    inventory = existingInventories.get(0);
+                    inventory.setLastUpdated(now);
+                    entityManager.merge(inventory);
+                } else {
+                    // Create new inventory
+                    inventory = new Inventory();
+                    inventory.setIngredient(ingredient);
+                    inventory.setUserId(userId);
+                    inventory.setLastUpdated(now);
+                    inventory.setCreatedAt(now);
+                    entityManager.persist(inventory);
+                }
 
                 // Add to response
                 InventoryResponse response = new InventoryResponse();

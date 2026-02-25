@@ -14,7 +14,7 @@ export function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +22,9 @@ export function Login() {
     setLoading(true);
 
     try {
+      // Clear previous session before login/register
+      await logout();
+
       if (isRegistering) {
         // Register logic
         if (!username || !password) {
