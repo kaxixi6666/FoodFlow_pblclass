@@ -9,6 +9,7 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Service
 public class RecipeLikeService {
@@ -43,6 +44,8 @@ public class RecipeLikeService {
                 return performUnlike(recipe, userId);
             }
         } catch (Exception e) {
+            System.err.println("Error toggling like: " + e.getMessage());
+            e.printStackTrace();
             return new LikeResult(false, 0, "Error toggling like: " + e.getMessage());
         }
     }
@@ -75,17 +78,23 @@ public class RecipeLikeService {
                         notification.setMessage(likerName + " liked your recipe '" + recipe.getName() + "'.");
                         notification.setRecipeId(recipe.getId());
                         notification.setIsRead(false);
+                        notification.setCreatedAt(LocalDateTime.now());
+                        notification.setUpdatedAt(LocalDateTime.now());
+                        
                         entityManager.persist(notification);
                     }
                 } catch (Exception e) {
                     // Continue with like operation even if notification fails
                     // 即使通知创建失败，继续执行点赞操作
                     System.err.println("Error creating notification: " + e.getMessage());
+                    e.printStackTrace();
                 }
             }
 
             return new LikeResult(true, recipe.getLikeCount(), null);
         } catch (Exception e) {
+            System.err.println("Error performing like operation: " + e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("Error performing like operation: " + e.getMessage(), e);
         }
     }
@@ -107,6 +116,8 @@ public class RecipeLikeService {
 
             return new LikeResult(false, recipe.getLikeCount(), null);
         } catch (Exception e) {
+            System.err.println("Error performing unlike operation: " + e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("Error performing unlike operation: " + e.getMessage(), e);
         }
     }
