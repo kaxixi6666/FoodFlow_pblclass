@@ -97,12 +97,17 @@ public class MealPlanController {
             
             // Fetch the recipe from database
             if (mealPlan.getRecipe() != null && mealPlan.getRecipe().getId() != null) {
-                Recipe recipe = entityManager.find(Recipe.class, mealPlan.getRecipe().getId());
-                if (recipe == null) {
-                    System.err.println("Recipe not found with ID: " + mealPlan.getRecipe().getId());
-                    return ResponseEntity.notFound().build();
+                try {
+                    Recipe recipe = entityManager.find(Recipe.class, mealPlan.getRecipe().getId());
+                    if (recipe == null) {
+                        System.err.println("Recipe not found with ID: " + mealPlan.getRecipe().getId());
+                        return ResponseEntity.notFound().build();
+                    }
+                    mealPlan.setRecipe(recipe);
+                } catch (NumberFormatException e) {
+                    System.err.println("Invalid recipe ID format: " + mealPlan.getRecipe().getId());
+                    return ResponseEntity.badRequest().build();
                 }
-                mealPlan.setRecipe(recipe);
             } else {
                 System.err.println("Recipe or Recipe ID is null");
                 return ResponseEntity.badRequest().build();
