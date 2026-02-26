@@ -298,31 +298,66 @@ public class RecipeController {
         @PathVariable Long id,
         @RequestHeader("X-User-Id") Long userId
     ) {
-        if (userId == null) {
-            return ResponseEntity.badRequest().build();
-        }
+        try {
+            if (userId == null) {
+                return ResponseEntity.badRequest().build();
+            }
 
-        Recipe recipe = entityManager.createQuery(
-            "SELECT r FROM Recipe r WHERE r.id = :id AND r.userId = :userId", Recipe.class)
-            .setParameter("id", id)
-            .setParameter("userId", userId)
-            .getResultList()
-            .stream()
-            .findFirst()
-            .orElse(null);
-        
-        if (recipe == null) {
-            return ResponseEntity.notFound().build();
+            System.out.println("Deleting recipe with ID: " + id + " for user: " + userId);
+
+            Recipe recipe = entityManager.createQuery(
+                "SELECT r FROM Recipe r WHERE r.id = :id AND r.userId = :userId", Recipe.class)
+                .setParameter("id", id)
+                .setParameter("userId", userId)
+                .getResultList()
+                .stream()
+                .findFirst()
+                .orElse(null);
+            
+            if (recipe == null) {
+                System.err.println("Recipe not found with ID: " + id + " for user: " + userId);
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Delete meal plans that reference this recipe
+            int mealPlansDeleted = entityManager.createQuery(
+                "DELETE FROM MealPlan mp WHERE mp.recipe.id = :recipeId")
+                .setParameter("recipeId", id)
+                .executeUpdate();
+            System.out.println("Deleted " + mealPlansDeleted + " meal plans referencing recipe " + id);
+            
+            // Delete recipe likes that reference this recipe
+            int likesDeleted = entityManager.createQuery(
+                "DELETE FROM RecipeLike rl WHERE rl.recipeId = :recipeId")
+                .setParameter("recipeId", id)
+                .executeUpdate();
+            System.out.println("Deleted " + likesDeleted + " recipe likes referencing recipe " + id);
+            
+            // Delete notifications that reference this recipe
+            int notificationsDeleted = entityManager.createQuery(
+                "DELETE FROM Notification n WHERE n.recipeId = :recipeId")
+                .setParameter("recipeId", id)
+                .executeUpdate();
+            System.out.println("Deleted " + notificationsDeleted + " notifications referencing recipe " + id);
+            
+            // Clear ingredients relationship to avoid foreign key constraint issues
+            if (recipe.getIngredients() != null) {
+                recipe.getIngredients().clear();
+                entityManager.merge(recipe);
+                entityManager.flush();
+                System.out.println("Cleared ingredients for recipe " + id);
+            }
+            
+            // Delete the recipe
+            entityManager.remove(recipe);
+            System.out.println("Successfully deleted recipe " + id);
+            
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            System.err.println("Error deleting recipe: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
-        
-        // Clear ingredients relationship to avoid foreign key constraint issues
-        if (recipe.getIngredients() != null) {
-            recipe.getIngredients().clear();
-            entityManager.merge(recipe);
-        }
-        
-        entityManager.remove(recipe);
-        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/like")
