@@ -95,7 +95,7 @@ public class RecipeLikeService {
         } catch (Exception e) {
             System.err.println("Error performing like operation: " + e.getMessage());
             e.printStackTrace();
-            throw new RuntimeException("Error performing like operation: " + e.getMessage(), e);
+            return new LikeResult(false, recipe.getLikeCount(), "Error performing like operation: " + e.getMessage());
         }
     }
 
@@ -118,7 +118,7 @@ public class RecipeLikeService {
         } catch (Exception e) {
             System.err.println("Error performing unlike operation: " + e.getMessage());
             e.printStackTrace();
-            throw new RuntimeException("Error performing unlike operation: " + e.getMessage(), e);
+            return new LikeResult(true, recipe.getLikeCount(), "Error performing unlike operation: " + e.getMessage());
         }
     }
 
