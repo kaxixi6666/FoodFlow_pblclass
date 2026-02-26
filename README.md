@@ -1,7 +1,40 @@
 
-  # FoodFlow - Food Inventory Dashboard
+# FoodFlow - Recipe Management Application
 
-This is a Food Inventory Dashboard application built with React and Spring Boot. The original design is available at https://www.figma.com/design/oPTxNH4BbwucxIFPSajSYk/Food-Inventory-Dashboard-Design.
+FoodFlow is a feature-rich recipe management application designed to help users more effectively manage ingredients, recipes, and meal plans, achieving healthy and efficient dietary lifestyles.
+
+## Product Overview
+
+FoodFlow is not just a recipe management tool, but also an intelligent assistant that helps users achieve healthy and efficient dietary lifestyles. Through its intuitive interface and powerful features, users can easily manage ingredients, plan meals, discover new recipes, and ultimately enhance their overall dining experience.
+
+## Core Features
+
+### 1. Recipe Management
+- **Personal Recipes**: Create, edit, view, and categorize personal recipes
+- **Public Recipes**: Browse and like public recipes published by other users
+- **Recipe Details**: View detailed recipe information, including ingredients, cooking steps, prep time, and cook time
+- **Recipe Status**: Supports two statuses: draft (visible only to the creator) and public (visible to all users)
+
+### 2. Inventory Management
+- **Manual Addition**: Directly input ingredient names to add to inventory
+- **AI Recognition**: Automatically identify ingredients from receipt or fridge images and add to inventory
+- **Bulk Operations**: Support for bulk adding ingredients to inventory
+
+### 3. Meal Plan Management
+- **Weekly View**: View and manage meal plans by week
+- **Meal Type Classification**: Supports three meal types: breakfast, lunch, and dinner
+- **Recipe Addition**: Add recipes from personal or public recipes to meal plans
+- **Week Switching**: Support for switching between different weeks' meal plans
+
+### 4. Social Interaction
+- **Recipe Liking**: Like recipes with support for unliking
+- **Author Notifications**: Send notifications to recipe authors when their recipe is first liked
+- **Notification Center**: View and manage unread notifications
+
+### 5. User Authentication
+- **Registration**: Create new user accounts
+- **Login**: User authentication
+- **User Information**: Manage personal profiles
 
 ## Technology Stack
 
@@ -147,6 +180,7 @@ This endpoint uses the GLM-4V multimodal model to detect text in images (like re
 - `POST /api/recipes` - Add new recipe
 - `PUT /api/recipes/{id}` - Update recipe
 - `DELETE /api/recipes/{id}` - Delete recipe
+- `POST /api/recipes/{id}/like` - Like or unlike a recipe
 
 ### Ingredient Recognition
 - `POST /api/ingredients/recognition/text` - Recognize ingredients from text
@@ -155,12 +189,22 @@ This endpoint uses the GLM-4V multimodal model to detect text in images (like re
 - `POST https://pbl.florentin.online/api/inventory/detect` - Recognize ingredients from receipt image (external API)
 
 ### Meal Plans
-- `GET /api/meal-plans` - Get all meal plans
+- `GET /api/meal-plans` - Get all meal plans (supports userId, startDate, endDate parameters)
 - `POST /api/meal-plans` - Add new meal plan
+- `PUT /api/meal-plans/{id}` - Update meal plan
+- `DELETE /api/meal-plans/{id}` - Delete meal plan
 
 ### Shopping List
 - `GET /api/shopping-list` - Get shopping list
 - `POST /api/shopping-list` - Add item to shopping list
+- `PUT /api/shopping-list/{id}` - Update shopping list item
+- `DELETE /api/shopping-list/{id}` - Delete shopping list item
+- `DELETE /api/shopping-list` - Clear shopping list
+
+### Notifications
+- `GET /api/notifications` - Get user notifications
+- `POST /api/notifications/{id}/read` - Mark notification as read
+- `POST /api/notifications/read-all` - Mark all notifications as read
 
 ## Project Structure
 
@@ -191,6 +235,7 @@ FoodFlow_pblclass/
 │   └── Dockerfile      # Frontend Dockerfile
 ├── docker-compose.yml  # Docker Compose configuration
 ├── README.md           # Project documentation
-└── DOCKER.md           # Docker instructions
+├── DOCKER.md           # Docker instructions
+└── PRODUCT_SUMMARY.md  # Product summary documentation
 ```
   
