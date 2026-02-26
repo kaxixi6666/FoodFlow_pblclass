@@ -11,10 +11,10 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id", nullable = false, columnDefinition = "bigint default 0")
     private Long userId;
 
-    @Column(name = "message", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "message", nullable = false, columnDefinition = "TEXT default ''")
     private String message;
 
     @Column(name = "recipe_id")
@@ -26,7 +26,7 @@ public class Notification {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at", nullable = false, columnDefinition = "timestamp(6) default CURRENT_TIMESTAMP")
     private LocalDateTime updatedAt;
 
     // Getters and setters
