@@ -5,6 +5,8 @@ import com.foodflow.model.Recipe;
 import com.foodflow.model.ShoppingListItem;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.PersistenceException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -24,58 +26,76 @@ public class MealPlanController {
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
-        List<MealPlan> mealPlans;
-        
-        if (userId != null) {
-            if (startDate != null && endDate != null) {
-                LocalDate start = LocalDate.parse(startDate);
-                LocalDate end = LocalDate.parse(endDate);
-                
-                mealPlans = entityManager.createQuery(
-                        "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe WHERE (mp.recipe.userId = :userId OR mp.recipe.isPublic = true) AND mp.date BETWEEN :start AND :end", MealPlan.class)
-                        .setParameter("userId", userId)
-                        .setParameter("start", start)
-                        .setParameter("end", end)
-                        .getResultList();
+        try {
+            List<MealPlan> mealPlans;
+            
+            if (userId != null) {
+                if (startDate != null && endDate != null) {
+                    LocalDate start = LocalDate.parse(startDate);
+                    LocalDate end = LocalDate.parse(endDate);
+                    
+                    mealPlans = entityManager.createQuery(
+                            "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe WHERE (mp.recipe.userId = :userId OR mp.recipe.isPublic = true) AND mp.date BETWEEN :start AND :end", MealPlan.class)
+                            .setParameter("userId", userId)
+                            .setParameter("start", start)
+                            .setParameter("end", end)
+                            .getResultList();
+                } else {
+                    mealPlans = entityManager.createQuery(
+                            "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe WHERE mp.recipe.userId = :userId", MealPlan.class)
+                            .setParameter("userId", userId)
+                            .getResultList();
+                }
             } else {
                 mealPlans = entityManager.createQuery(
-                        "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe WHERE mp.recipe.userId = :userId", MealPlan.class)
-                        .setParameter("userId", userId)
+                        "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe", MealPlan.class)
                         .getResultList();
             }
-        } else {
-            mealPlans = entityManager.createQuery(
-                    "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe", MealPlan.class)
-                    .getResultList();
+            
+            return ResponseEntity.ok(mealPlans);
+        } catch (Exception e) {
+            System.err.println("Error fetching meal plans: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        
-        return ResponseEntity.ok(mealPlans);
     }
 
     @GetMapping("/week")
     public ResponseEntity<List<MealPlan>> getMealPlansByWeek(
             @RequestParam String startDate,
             @RequestParam String endDate) {
-        LocalDate start = LocalDate.parse(startDate);
-        LocalDate end = LocalDate.parse(endDate);
-        
-        List<MealPlan> mealPlans = entityManager.createQuery(
-                "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe WHERE mp.date BETWEEN :start AND :end", MealPlan.class)
-                .setParameter("start", start)
-                .setParameter("end", end)
-                .getResultList();
-        return ResponseEntity.ok(mealPlans);
+        try {
+            LocalDate start = LocalDate.parse(startDate);
+            LocalDate end = LocalDate.parse(endDate);
+            
+            List<MealPlan> mealPlans = entityManager.createQuery(
+                    "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe WHERE mp.date BETWEEN :start AND :end", MealPlan.class)
+                    .setParameter("start", start)
+                    .setParameter("end", end)
+                    .getResultList();
+            return ResponseEntity.ok(mealPlans);
+        } catch (Exception e) {
+            System.err.println("Error fetching meal plans by week: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @GetMapping("/date/{date}")
     public ResponseEntity<List<MealPlan>> getMealPlansByDate(@PathVariable String date) {
-        LocalDate localDate = LocalDate.parse(date);
-        
-        List<MealPlan> mealPlans = entityManager.createQuery(
-                "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe WHERE mp.date = :date", MealPlan.class)
-                .setParameter("date", localDate)
-                .getResultList();
-        return ResponseEntity.ok(mealPlans);
+        try {
+            LocalDate localDate = LocalDate.parse(date);
+            
+            List<MealPlan> mealPlans = entityManager.createQuery(
+                    "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe WHERE mp.date = :date", MealPlan.class)
+                    .setParameter("date", localDate)
+                    .getResultList();
+            return ResponseEntity.ok(mealPlans);
+        } catch (Exception e) {
+            System.err.println("Error fetching meal plans by date: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PostMapping
@@ -95,7 +115,39 @@ public class MealPlanController {
                 return ResponseEntity.badRequest().build();
             }
             
-            // Fetch the recipe from database
+            // Validate date
+            if (mealPlan.getDate() == null) {
+                System.err.println("Date is null");
+                return ResponseEntity.badRequest().build();
+            }
+            
+            // Validate meal type
+            if (mealPlan.getMealType() == null || mealPlan.getMealType().trim().isEmpty()) {
+                System.err.println("Meal type is null or empty");
+                return ResponseEntity.badRequest().build();
+            }
+            
+            // Check for duplicate meal plan (user_id, date, meal_type)
+            try {
+                List<MealPlan> existingPlans = entityManager.createQuery(
+                        "SELECT mp FROM MealPlan mp WHERE mp.userId = :userId AND mp.date = :date AND mp.mealType = :mealType", MealPlan.class)
+                        .setParameter("userId", mealPlan.getUserId())
+                        .setParameter("date", mealPlan.getDate())
+                        .setParameter("mealType", mealPlan.getMealType())
+                        .getResultList();
+                
+                if (!existingPlans.isEmpty()) {
+                    System.err.println("Duplicate meal plan found for user " + mealPlan.getUserId() + 
+                                   " on " + mealPlan.getDate() + " for " + mealPlan.getMealType());
+                    return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(existingPlans.get(0));
+                }
+            } catch (Exception e) {
+                System.err.println("Error checking for duplicate meal plan: " + e.getMessage());
+                // Continue with creation if check fails
+            }
+            
+            // Fetch recipe from database
             if (mealPlan.getRecipe() != null && mealPlan.getRecipe().getId() != null) {
                 try {
                     Recipe recipe = entityManager.find(Recipe.class, mealPlan.getRecipe().getId());
@@ -122,55 +174,88 @@ public class MealPlanController {
             System.out.println("Meal plan created with ID: " + mealPlan.getId());
             
             return ResponseEntity.ok(mealPlan);
+        } catch (PersistenceException e) {
+            System.err.println("Persistence exception creating meal plan: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Check for unique constraint violation (兼容 H2 和 PostgreSQL)
+            if (e.getCause() != null && e.getCause().getMessage() != null) {
+                String message = e.getCause().getMessage().toLowerCase();
+                if (message.contains("unique constraint") || message.contains("duplicate key") || 
+                    message.contains("unique") || message.contains("duplicate")) {
+                    return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(null);
+                }
+            }
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } catch (Exception e) {
             System.err.println("Error creating meal plan: " + e.getMessage());
             e.printStackTrace();
-            throw e;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     @PutMapping("/{id}")
     @Transactional
     public ResponseEntity<MealPlan> updateMealPlan(@PathVariable Long id, @RequestBody MealPlan mealPlan) {
-        MealPlan existingMealPlan = entityManager.find(MealPlan.class, id);
-        if (existingMealPlan == null) {
-            return ResponseEntity.notFound().build();
-        }
-        
-        existingMealPlan.setDate(mealPlan.getDate());
-        existingMealPlan.setDayOfWeek(mealPlan.getDayOfWeek());
-        existingMealPlan.setMealType(mealPlan.getMealType());
-        
-        // Update recipe if provided
-        if (mealPlan.getRecipe() != null && mealPlan.getRecipe().getId() != null) {
-            Recipe recipe = entityManager.find(Recipe.class, mealPlan.getRecipe().getId());
-            if (recipe != null) {
-                existingMealPlan.setRecipe(recipe);
+        try {
+            MealPlan existingMealPlan = entityManager.find(MealPlan.class, id);
+            if (existingMealPlan == null) {
+                return ResponseEntity.notFound().build();
             }
+            
+            existingMealPlan.setDate(mealPlan.getDate());
+            existingMealPlan.setDayOfWeek(mealPlan.getDayOfWeek());
+            existingMealPlan.setMealType(mealPlan.getMealType());
+            
+            // Update recipe if provided
+            if (mealPlan.getRecipe() != null && mealPlan.getRecipe().getId() != null) {
+                Recipe recipe = entityManager.find(Recipe.class, mealPlan.getRecipe().getId());
+                if (recipe != null) {
+                    existingMealPlan.setRecipe(recipe);
+                }
+            }
+            
+            entityManager.merge(existingMealPlan);
+            return ResponseEntity.ok(existingMealPlan);
+        } catch (Exception e) {
+            System.err.println("Error updating meal plan: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        
-        entityManager.merge(existingMealPlan);
-        return ResponseEntity.ok(existingMealPlan);
     }
 
     @DeleteMapping("/{id}")
     @Transactional
     public ResponseEntity<Void> deleteMealPlan(@PathVariable Long id) {
-        MealPlan mealPlan = entityManager.find(MealPlan.class, id);
-        if (mealPlan == null) {
-            return ResponseEntity.notFound().build();
+        try {
+            MealPlan mealPlan = entityManager.find(MealPlan.class, id);
+            if (mealPlan == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            entityManager.remove(mealPlan);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            System.err.println("Error deleting meal plan: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        
-        entityManager.remove(mealPlan);
-        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/shopping-list")
     public ResponseEntity<List<ShoppingListItem>> getShoppingList() {
-        List<ShoppingListItem> items = entityManager.createQuery(
-                "SELECT sli FROM ShoppingListItem sli", ShoppingListItem.class)
-                .getResultList();
-        return ResponseEntity.ok(items);
+        try {
+            List<ShoppingListItem> items = entityManager.createQuery(
+                    "SELECT sli FROM ShoppingListItem sli", ShoppingListItem.class)
+                    .getResultList();
+            return ResponseEntity.ok(items);
+        } catch (Exception e) {
+            System.err.println("Error fetching shopping list: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PostMapping("/shopping-list")
@@ -190,7 +275,7 @@ public class MealPlanController {
         } catch (Exception e) {
             System.err.println("Error adding shopping list item: " + e.getMessage());
             e.printStackTrace();
-            throw e;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -198,35 +283,53 @@ public class MealPlanController {
     @Transactional
     public ResponseEntity<ShoppingListItem> updateShoppingListItem(
             @PathVariable Long id, @RequestBody ShoppingListItem item) {
-        ShoppingListItem existingItem = entityManager.find(ShoppingListItem.class, id);
-        if (existingItem == null) {
-            return ResponseEntity.notFound().build();
+        try {
+            ShoppingListItem existingItem = entityManager.find(ShoppingListItem.class, id);
+            if (existingItem == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            existingItem.setName(item.getName());
+            existingItem.setCategory(item.getCategory());
+            existingItem.setChecked(item.getChecked());
+            
+            entityManager.merge(existingItem);
+            return ResponseEntity.ok(existingItem);
+        } catch (Exception e) {
+            System.err.println("Error updating shopping list item: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        
-        existingItem.setName(item.getName());
-        existingItem.setCategory(item.getCategory());
-        existingItem.setChecked(item.getChecked());
-        
-        entityManager.merge(existingItem);
-        return ResponseEntity.ok(existingItem);
     }
 
     @DeleteMapping("/shopping-list/{id}")
     @Transactional
     public ResponseEntity<Void> deleteShoppingListItem(@PathVariable Long id) {
-        ShoppingListItem item = entityManager.find(ShoppingListItem.class, id);
-        if (item == null) {
-            return ResponseEntity.notFound().build();
+        try {
+            ShoppingListItem item = entityManager.find(ShoppingListItem.class, id);
+            if (item == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            entityManager.remove(item);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            System.err.println("Error deleting shopping list item: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        
-        entityManager.remove(item);
-        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/shopping-list")
     @Transactional
     public ResponseEntity<Void> clearShoppingList() {
-        entityManager.createQuery("DELETE FROM ShoppingListItem").executeUpdate();
-        return ResponseEntity.noContent().build();
+        try {
+            entityManager.createQuery("DELETE FROM ShoppingListItem").executeUpdate();
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            System.err.println("Error clearing shopping list: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }
