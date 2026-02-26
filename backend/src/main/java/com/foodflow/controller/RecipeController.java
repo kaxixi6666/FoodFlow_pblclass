@@ -8,6 +8,7 @@ import com.foodflow.model.User;
 import com.foodflow.service.RecipeDataGenerator;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -350,55 +351,70 @@ public class RecipeController {
                 // User has not liked this recipe yet - perform like action
                 System.out.println("User " + userId + " liking recipe " + id);
 
-                // Create recipe like record
-                RecipeLike recipeLike = new RecipeLike();
-                recipeLike.setUserId(userId);
-                recipeLike.setRecipeId(id);
-                entityManager.persist(recipeLike);
+                try {
+                    // Create recipe like record
+                    RecipeLike recipeLike = new RecipeLike();
+                    recipeLike.setUserId(userId);
+                    recipeLike.setRecipeId(id);
+                    entityManager.persist(recipeLike);
 
-                // Increment like count (only on first like)
-                recipe.setLikeCount((recipe.getLikeCount() != null ? recipe.getLikeCount() : 0) + 1);
-                entityManager.merge(recipe);
+                    // Increment like count (only on first like)
+                    recipe.setLikeCount((recipe.getLikeCount() != null ? recipe.getLikeCount() : 0) + 1);
+                    entityManager.merge(recipe);
 
-                // Create notification for recipe author (only on first like)
-                if (recipe.getUserId() != null && !recipe.getUserId().equals(userId)) {
-                    User author = entityManager.find(User.class, recipe.getUserId());
-                    if (author != null) {
-                        User liker = entityManager.find(User.class, userId);
-                        String likerName = liker != null ? liker.getUsername() : "Someone";
-                        
-                        Notification notification = new Notification();
-                        notification.setUserId(recipe.getUserId());
-                        notification.setMessage(likerName + " liked your recipe '" + recipe.getName() + "'.");
-                        notification.setRecipeId(id);
-                        notification.setIsRead(false);
-                        entityManager.persist(notification);
-                        
-                        System.out.println("Created notification for user " + recipe.getUserId());
+                    // Create notification for recipe author (only on first like)
+                    if (recipe.getUserId() != null && !recipe.getUserId().equals(userId)) {
+                        try {
+                            User author = entityManager.find(User.class, recipe.getUserId());
+                            if (author != null) {
+                                User liker = entityManager.find(User.class, userId);
+                                String likerName = liker != null ? liker.getUsername() : "Someone";
+                                
+                                Notification notification = new Notification();
+                                notification.setUserId(recipe.getUserId());
+                                notification.setMessage(likerName + " liked your recipe '" + recipe.getName() + "'.");
+                                notification.setRecipeId(id);
+                                notification.setIsRead(false);
+                                entityManager.persist(notification);
+                                
+                                System.out.println("Created notification for user " + recipe.getUserId());
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error creating notification: " + e.getMessage());
+                            // Continue with like operation even if notification fails
+                        }
                     }
-                }
 
-                return ResponseEntity.ok(new LikeResponse(true, recipe.getLikeCount()));
+                    return ResponseEntity.ok(new LikeResponse(true, recipe.getLikeCount()));
+                } catch (Exception e) {
+                    System.err.println("Error performing like operation: " + e.getMessage());
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                }
             } else {
                 // User has already liked this recipe - perform unlike action
                 System.out.println("User " + userId + " unliking recipe " + id);
 
-                // Delete recipe like record
-                entityManager.createQuery(
-                    "DELETE FROM RecipeLike rl WHERE rl.userId = :userId AND rl.recipeId = :recipeId")
-                    .setParameter("userId", userId)
-                    .setParameter("recipeId", id)
-                    .executeUpdate();
+                try {
+                    // Delete recipe like record
+                    int deletedCount = entityManager.createQuery(
+                        "DELETE FROM RecipeLike rl WHERE rl.userId = :userId AND rl.recipeId = :recipeId")
+                        .setParameter("userId", userId)
+                        .setParameter("recipeId", id)
+                        .executeUpdate();
 
-                // Do NOT decrement like count (as per requirements)
-                // Do NOT delete any notifications
+                    // Do NOT decrement like count (as per requirements)
+                    // Do NOT delete any notifications
 
-                return ResponseEntity.ok(new LikeResponse(false, recipe.getLikeCount()));
+                    return ResponseEntity.ok(new LikeResponse(false, recipe.getLikeCount()));
+                } catch (Exception e) {
+                    System.err.println("Error performing unlike operation: " + e.getMessage());
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                }
             }
         } catch (Exception e) {
             System.err.println("Error liking/unliking recipe: " + e.getMessage());
             e.printStackTrace();
-            throw e;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
