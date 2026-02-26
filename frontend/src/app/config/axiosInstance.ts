@@ -6,10 +6,10 @@ interface ExtendedAxiosRequestConfig<T = any> extends AxiosRequestConfig<T> {
   cache?: boolean;
 }
 
-// API基础URL
+// API base URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://foodflow-pblclass.onrender.com/api';
 
-// 接口响应类型
+// API response type
 interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
@@ -18,7 +18,7 @@ interface ApiResponse<T = any> {
   error?: string;
 }
 
-// 请求缓存接口
+// Request cache interface
 interface RequestCache {
   [key: string]: {
     data: any;
@@ -26,7 +26,7 @@ interface RequestCache {
   };
 }
 
-// 正在进行的请求
+// Pending requests
 interface PendingRequests {
   [key: string]: Promise<any>;
 }
@@ -35,10 +35,10 @@ class ApiClient {
   private instance: AxiosInstance;
   private cache: RequestCache = {};
   private pendingRequests: PendingRequests = {};
-  private cacheExpiryTime = 5 * 60 * 1000; // 缓存过期时间：5分钟
+  private cacheExpiryTime = 5 * 60 * 1000; // Cache expiry time: 5 minutes
 
   constructor() {
-    // 创建axios实例
+    // Create axios instance
     this.instance = axios.create({
       baseURL: API_BASE_URL,
       timeout: 30000,
@@ -48,13 +48,13 @@ class ApiClient {
       },
     });
 
-    // 请求拦截器
+    // Request interceptor
     this.instance.interceptors.request.use(
       (config) => this.handleRequest(config),
       (error) => this.handleRequestError(error)
     );
 
-    // 响应拦截器
+    // Response interceptor
     this.instance.interceptors.response.use(
       (response) => this.handleResponse(response),
       (error) => this.handleResponseError(error)
@@ -62,7 +62,7 @@ class ApiClient {
   }
 
   /**
-   * 生成请求缓存键
+   * Generate request cache key
    */
   private generateCacheKey(config: ExtendedAxiosRequestConfig): string {
     const { url, method, params, data } = config;
@@ -71,24 +71,24 @@ class ApiClient {
   }
 
   /**
-   * 处理请求
+   * Handle request
    */
   private handleRequest(config: ExtendedAxiosRequestConfig): ExtendedAxiosRequestConfig {
-    // 获取用户信息
+    // Get user information
     const user = this.getUserFromLocalStorage();
     
-    // 添加用户ID到请求头
+    // Add user ID to request headers
     if (user?.id && config.headers) {
       config.headers['X-User-Id'] = user.id.toString();
     }
 
-    // 检查缓存
+    // Check cache
     if (config.method === 'get' && config.cache !== false) {
       const cacheKey = this.generateCacheKey(config);
       const cachedData = this.cache[cacheKey];
       
       if (cachedData && Date.now() - cachedData.timestamp < this.cacheExpiryTime) {
-        // 返回缓存数据
+        // Return cached data
         return { ...config, _cachedResponse: cachedData.data };
       }
     }
@@ -97,7 +97,7 @@ class ApiClient {
   }
 
   /**
-   * 处理请求错误
+   * Handle request error
    */
   private handleRequestError(error: AxiosError): Promise<AxiosError> {
     console.error('Request Error:', error);
@@ -105,12 +105,12 @@ class ApiClient {
   }
 
   /**
-   * 处理响应
+   * Handle response
    */
   private handleResponse(response: AxiosResponse): AxiosResponse {
     const { config, data } = response;
 
-    // 缓存GET请求的响应
+    // Cache GET request responses
     if (config.method === 'get' && config.cache !== false) {
       const cacheKey = this.generateCacheKey(config);
       this.cache[cacheKey] = {
@@ -123,19 +123,19 @@ class ApiClient {
   }
 
   /**
-   * 处理响应错误
+   * Handle response error
    */
   private handleResponseError(error: AxiosError): Promise<never> {
     console.error('Response Error:', error);
 
-    // 处理不同类型的错误
+    // Handle different types of errors
     if (error.response) {
-      // 服务器返回错误状态码
+      // Server returned error status code
       const status = error.response.status;
       
       switch (status) {
         case 401:
-          // 未授权，清除用户信息
+          // Unauthorized, clear user information
           this.clearUserSession();
           break;
         case 403:
@@ -151,10 +151,10 @@ class ApiClient {
           console.error(`Error: ${status}`);
       }
     } else if (error.request) {
-      // 请求已发送但未收到响应
+      // Request sent but no response received
       console.error('No response received');
     } else {
-      // 请求配置错误
+      // Request configuration error
       console.error('Request error:', error.message);
     }
 
@@ -162,7 +162,7 @@ class ApiClient {
   }
 
   /**
-   * 从本地存储获取用户信息
+   * Get user information from local storage
    */
   private getUserFromLocalStorage(): any {
     try {
@@ -175,51 +175,51 @@ class ApiClient {
   }
 
   /**
-   * 清除用户会话
+   * Clear user session
    */
   private clearUserSession(): void {
     localStorage.removeItem('user');
-    // 可以添加重定向到登录页的逻辑
+    // Can add logic to redirect to login page
   }
 
   /**
-   * 发送请求（带请求去重）
+   * Send request (with request deduplication)
    */
   async request<T = any>(config: ExtendedAxiosRequestConfig): Promise<ApiResponse<T>> {
-    // 检查是否有缓存响应
+    // Check if there is a cached response
     if ('_cachedResponse' in config) {
       return config._cachedResponse as ApiResponse<T>;
     }
 
-    // 生成请求键
+    // Generate request key
     const requestKey = this.generateCacheKey(config);
 
-    // 检查是否有相同请求正在进行
+    // Check if there is a same request in progress
     if (this.pendingRequests[requestKey]) {
       return this.pendingRequests[requestKey];
     }
 
-    // 创建请求Promise
+    // Create request Promise
     const requestPromise = this.instance.request<ApiResponse<T>>(config)
       .then(response => {
-        // 请求成功，从pending中移除
+        // Request successful, remove from pending
         delete this.pendingRequests[requestKey];
         return response.data;
       })
       .catch(error => {
-        // 请求失败，从pending中移除
+        // Request failed, remove from pending
         delete this.pendingRequests[requestKey];
         throw error;
       });
 
-    // 添加到pending请求
+    // Add to pending requests
     this.pendingRequests[requestKey] = requestPromise;
 
     return requestPromise;
   }
 
   /**
-   * GET请求
+   * GET request
    */
   async get<T = any>(url: string, config?: ExtendedAxiosRequestConfig): Promise<ApiResponse<T>> {
     return this.request<T>({
@@ -230,7 +230,7 @@ class ApiClient {
   }
 
   /**
-   * POST请求
+   * POST request
    */
   async post<T = any>(url: string, data?: any, config?: ExtendedAxiosRequestConfig): Promise<ApiResponse<T>> {
     return this.request<T>({
@@ -242,7 +242,7 @@ class ApiClient {
   }
 
   /**
-   * PUT请求
+   * PUT request
    */
   async put<T = any>(url: string, data?: any, config?: ExtendedAxiosRequestConfig): Promise<ApiResponse<T>> {
     return this.request<T>({
@@ -254,7 +254,7 @@ class ApiClient {
   }
 
   /**
-   * DELETE请求
+   * DELETE request
    */
   async delete<T = any>(url: string, config?: ExtendedAxiosRequestConfig): Promise<ApiResponse<T>> {
     return this.request<T>({
@@ -265,14 +265,14 @@ class ApiClient {
   }
 
   /**
-   * 清除缓存
+   * Clear cache
    */
   clearCache(): void {
     this.cache = {};
   }
 
   /**
-   * 清除特定URL的缓存
+   * Clear cache for specific URL
    */
   clearCacheForUrl(url: string): void {
     Object.keys(this.cache).forEach(key => {
@@ -283,10 +283,10 @@ class ApiClient {
   }
 }
 
-// 导出单例实例
+// Export singleton instance
 export const apiClient = new ApiClient();
 
-// 导出API端点
+// Export API endpoints
 export const API_ENDPOINTS = {
   INVENTORY: '/inventory',
   INGREDIENTS: '/ingredients',

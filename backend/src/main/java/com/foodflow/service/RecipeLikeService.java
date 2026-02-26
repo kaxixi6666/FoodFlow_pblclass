@@ -63,19 +63,37 @@ public class RecipeLikeService {
                     // 仅在首次点赞时为食谱作者创建通知
                     if (recipe.getUserId() != null && !recipe.getUserId().equals(userId)) {
                         try {
+                            System.out.println("Attempting to create notification for recipe author");
+                            System.out.println("Recipe author ID: " + recipe.getUserId());
+                            System.out.println("Liker ID: " + userId);
+                            
                             User author = entityManager.find(User.class, recipe.getUserId());
+                            System.out.println("Author found: " + (author != null));
+                            
                             if (author != null) {
                                 User liker = entityManager.find(User.class, userId);
+                                System.out.println("Liker found: " + (liker != null));
+                                
                                 String likerName = liker != null ? liker.getUsername() : "Someone";
+                                System.out.println("Liker name: " + likerName);
+                                System.out.println("Recipe name: " + recipe.getName());
+                                
+                                String message = likerName + " liked your recipe '" + recipe.getName() + "'.";
+                                System.out.println("Notification message: " + message);
                                 
                                 Notification notification = new Notification();
                                 notification.setUserId(recipe.getUserId());
-                                notification.setMessage(likerName + " liked your recipe '" + recipe.getName() + "'.");
+                                notification.setReceiverId(recipe.getUserId()); // Set receiver as recipe author
+                                notification.setSenderId(userId); // Set sender as the user who liked
+                                notification.setReferenceId(recipe.getId()); // Set reference as recipe ID
+                                notification.setType("like"); // Set notification type as like
+                                notification.setMessage(message);
                                 notification.setRecipeId(recipe.getId());
                                 notification.setIsRead(false);
                                 notification.setCreatedAt(LocalDateTime.now());
                                 notification.setUpdatedAt(LocalDateTime.now());
                                 
+                                System.out.println("About to persist notification");
                                 entityManager.persist(notification);
                                 System.out.println("Notification created for recipe author");
                             }

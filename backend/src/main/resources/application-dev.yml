@@ -1,0 +1,78 @@
+# Server Configuration
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+# Database Configuration
+spring:
+  datasource:
+    url: jdbc:h2:mem:foodflow
+    username: sa
+    password: password
+    driver-class-name: org.h2.Driver
+  
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+    open-in-view: false
+  
+  # H2 Console Configuration
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  
+  # Security Configuration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ''
+          issuer-uri: ''
+  
+  # File Upload Configuration
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  
+  # Caching Configuration
+  cache:
+    type: simple
+  
+  # Spring Boot DevTools
+  devtools:
+    restart:
+      enabled: true
+  
+  # Actuator Configuration
+  management:
+    endpoints:
+      web:
+        exposure:
+          include: health,info,metrics
+
+# JWT Configuration
+jwt:
+  secret: dev-secret-key-for-local-development-only
+  expiration: 86400
+
+# LLM Configuration
+openai:
+  api-key: ''
+  model: gpt-4
+  temperature: 0.3
+
+# Logging Configuration
+logging:
+  level:
+    org.springframework: DEBUG
+    com.foodflow: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

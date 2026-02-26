@@ -1,4 +1,4 @@
-import { Plus, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, X, CheckCircle, AlertCircle, Calendar } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { API_ENDPOINTS, fetchAPI } from "../config/api";
@@ -35,6 +35,7 @@ export function Planning() {
   const [pendingRecipe, setPendingRecipe] = useState<Recipe | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showMealTypeModal, setShowMealTypeModal] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
   useEffect(() => {
     if (location.state?.recipeToAdd) {
@@ -61,7 +62,8 @@ export function Planning() {
         endpoint += `?userId=${user.id}&startDate=${startDateStr}&endDate=${endDateStr}`;
       }
       const data = await fetchAPI(endpoint);
-      setMealPlans(data);
+      const mealPlansData = Array.isArray(data) ? data : [];
+      setMealPlans(mealPlansData);
     } catch (error) {
       console.error('Error fetching meal plans:', error);
     }
@@ -97,13 +99,14 @@ export function Planning() {
   };
 
   const handleMealTypeSelect = async (mealType: "breakfast" | "lunch" | "dinner") => {
-    if (!pendingRecipe || !selectedDate) return;
+    if (!pendingRecipe || !selectedDate || !user?.id) return;
 
     try {
       const mealPlanData = {
         date: selectedDate,
         dayOfWeek: daysOfWeek[new Date(selectedDate).getDay() === 0 ? 6 : new Date(selectedDate).getDay() - 1],
         mealType: mealType,
+        userId: user.id,
         recipe: pendingRecipe
       };
 
@@ -111,13 +114,39 @@ export function Planning() {
         method: 'POST',
         body: JSON.stringify(mealPlanData)
       });
-      setMealPlans([...mealPlans, savedMealPlan]);
+      setMealPlans([...mealPlans, savedMealPlan as unknown as MealPlan]);
+      
+      const formattedDate = new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      setNotification({
+        type: 'success',
+        message: `Added ${pendingRecipe.name} to ${mealType} plan on ${formattedDate}`
+      });
+      
       setPendingRecipe(null);
       setShowMealTypeModal(false);
       setSelectedDate(null);
+      
+      setTimeout(() => setNotification(null), 3000);
     } catch (error) {
       console.error('Error adding meal plan:', error);
-      alert('Failed to add meal plan. Please try again.');
+      
+      const existingMeal = mealPlans.find(
+        (plan) => plan.date === selectedDate && plan.mealType === mealType
+      );
+      
+      if (existingMeal) {
+        setNotification({
+          type: 'error',
+          message: `A recipe already exists in this slot. Remove it first or try again.`
+        });
+      } else {
+        setNotification({
+          type: 'error',
+          message: 'Failed to add meal plan. Please try again.'
+        });
+      }
+      
+      setTimeout(() => setNotification(null), 3000);
     }
   };
 
@@ -128,9 +157,21 @@ export function Planning() {
       });
 
       setMealPlans(mealPlans.filter((plan) => plan.id !== mealPlanId));
+      
+      setNotification({
+        type: 'success',
+        message: 'Meal plan removed successfully'
+      });
+      
+      setTimeout(() => setNotification(null), 3000);
     } catch (error) {
       console.error('Error removing meal plan:', error);
-      alert('Failed to remove meal plan. Please try again.');
+      setNotification({
+        type: 'error',
+        message: 'Failed to remove meal plan. Please try again.'
+      });
+      
+      setTimeout(() => setNotification(null), 3000);
     }
   };
 
@@ -146,6 +187,10 @@ export function Planning() {
     setCurrentWeekStart(newDate);
   };
 
+  const handleThisWeek = () => {
+    setCurrentWeekStart(new Date());
+  };
+
   const weekDates = getWeekDates();
   const isToday = (date: Date) => {
     const today = new Date();
@@ -154,6 +199,25 @@ export function Planning() {
 
   return (
     <div className="space-y-6">
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+          notification.type === 'success' 
+            ? 'bg-green-50 border border-green-200' 
+            : 'bg-red-50 border border-red-200'
+        }`}>
+          {notification.type === 'success' ? (
+            <CheckCircle className="w-5 h-5 text-green-600" />
+          ) : (
+            <AlertCircle className="w-5 h-5 text-red-600" />
+          )}
+          <span className={`text-sm font-medium ${
+            notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+          }`}>
+            {notification.message}
+          </span>
+        </div>
+      )}
+
       {pendingRecipe && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -183,7 +247,12 @@ export function Planning() {
             <h3 className="text-lg text-gray-900">
               Week of {weekDates[0].toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} - {weekDates[6].toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
             </h3>
-            <p className="text-sm text-gray-600 mt-1">This Week</p>
+            <button
+              onClick={handleThisWeek}
+              className="text-sm text-primary hover:text-primary/80 mt-1 font-medium"
+            >
+              This Week
+            </button>
           </div>
           <button onClick={handleNextWeek} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
             <ChevronRight className="w-5 h-5 text-gray-600" />
@@ -254,25 +323,51 @@ export function Planning() {
       {showMealTypeModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Meal Type</h3>
-            <p className="text-sm text-gray-600 mb-6">Which meal would you like to add this recipe to?</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Select Meal Type</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Adding <span className="font-medium text-gray-900">{pendingRecipe?.name}</span> to{' '}
+              {selectedDate && new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+            </p>
             <div className="space-y-3">
-              {(["breakfast", "lunch", "dinner"] as const).map((mealType) => (
-                <button
-                  key={mealType}
-                  onClick={() => handleMealTypeSelect(mealType)}
-                  className="w-full py-3 px-4 bg-gray-50 hover:bg-orange-50 border border-gray-200 hover:border-primary rounded-lg transition-colors text-left capitalize"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-gray-900">{mealType}</span>
-                    <Plus className="w-5 h-5 text-gray-400" />
-                  </div>
-                </button>
-              ))}
+              {(["breakfast", "lunch", "dinner"] as const).map((mealType) => {
+                const existingMeal = mealPlans.find(
+                  (plan) => plan.date === selectedDate && plan.mealType === mealType
+                );
+                
+                return (
+                  <button
+                    key={mealType}
+                    onClick={() => handleMealTypeSelect(mealType)}
+                    disabled={!!existingMeal}
+                    className={`w-full py-3 px-4 border rounded-lg transition-colors text-left capitalize ${
+                      existingMeal
+                        ? "bg-gray-100 border-gray-200 cursor-not-allowed opacity-60"
+                        : "bg-gray-50 hover:bg-orange-50 border-gray-200 hover:border-primary"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                        <span className="font-medium text-gray-900">{mealType}</span>
+                      </div>
+                      {existingMeal ? (
+                        <span className="text-xs text-gray-500">Already filled</span>
+                      ) : (
+                        <Plus className="w-5 h-5 text-gray-400" />
+                      )}
+                    </div>
+                    {existingMeal && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Current: {existingMeal.recipe.name}
+                      </p>
+                    )}
+                  </button>
+                );
+              })}
             </div>
             <button
               onClick={() => setShowMealTypeModal(false)}
-              className="w-full mt-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="w-full mt-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200"
             >
               Cancel
             </button>

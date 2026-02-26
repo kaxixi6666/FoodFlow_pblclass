@@ -52,7 +52,7 @@ export function Home() {
     });
     
     if (invalidFiles.length > 0) {
-      toast.error('仅支持 JPG/PNG 格式图片');
+      toast.error('Only JPG/PNG format images are supported');
     }
     
     if (validFiles.length > 0) {

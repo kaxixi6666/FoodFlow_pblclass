@@ -14,6 +14,18 @@ public class Notification {
     @Column(name = "user_id", nullable = false, columnDefinition = "bigint default 0")
     private Long userId;
 
+    @Column(name = "receiver_id", nullable = false)
+    private Long receiverId;
+
+    @Column(name = "sender_id", nullable = false)
+    private Long senderId;
+
+    @Column(name = "reference_id", nullable = false)
+    private Long referenceId;
+
+    @Column(name = "type", nullable = false)
+    private String type;
+
     @Column(name = "message", nullable = false, columnDefinition = "TEXT default ''")
     private String message;
 
@@ -44,6 +56,38 @@ public class Notification {
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public Long getReceiverId() {
+        return receiverId;
+    }
+
+    public void setReceiverId(Long receiverId) {
+        this.receiverId = receiverId;
+    }
+
+    public Long getSenderId() {
+        return senderId;
+    }
+
+    public void setSenderId(Long senderId) {
+        this.senderId = senderId;
+    }
+
+    public Long getReferenceId() {
+        return referenceId;
+    }
+
+    public void setReferenceId(Long referenceId) {
+        this.referenceId = referenceId;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public String getMessage() {

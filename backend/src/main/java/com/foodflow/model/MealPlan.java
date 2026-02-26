@@ -21,6 +21,9 @@ public class MealPlan {
     @Column(name = "meal_type", nullable = false)
     private String mealType; // breakfast, lunch, dinner
 
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "recipe_id", nullable = false)
     private Recipe recipe;
@@ -70,6 +73,14 @@ public class MealPlan {
 
     public void setRecipe(Recipe recipe) {
         this.recipe = recipe;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public LocalDateTime getCreatedAt() {

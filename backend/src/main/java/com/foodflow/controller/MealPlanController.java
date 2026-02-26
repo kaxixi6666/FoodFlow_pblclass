@@ -86,7 +86,14 @@ public class MealPlanController {
             System.out.println("  Date: " + mealPlan.getDate());
             System.out.println("  Day of week: " + mealPlan.getDayOfWeek());
             System.out.println("  Meal type: " + mealPlan.getMealType());
+            System.out.println("  User ID: " + mealPlan.getUserId());
             System.out.println("  Recipe ID: " + (mealPlan.getRecipe() != null ? mealPlan.getRecipe().getId() : "null"));
+            
+            // Validate user ID
+            if (mealPlan.getUserId() == null) {
+                System.err.println("User ID is null");
+                return ResponseEntity.badRequest().build();
+            }
             
             // Fetch the recipe from database
             if (mealPlan.getRecipe() != null && mealPlan.getRecipe().getId() != null) {
