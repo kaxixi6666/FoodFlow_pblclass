@@ -120,10 +120,9 @@ public class RecipeController {
             
             // Set userId and isPublic based on status
             recipe.setUserId(userId);
-            if (recipe.getIsPublic() == null) {
-                // Set isPublic based on status
-                recipe.setIsPublic("public".equals(recipe.getStatus()));
-            }
+            // Always set isPublic based on status to ensure consistency
+            // 总是根据状态设置isPublic以确保一致性
+            recipe.setIsPublic("public".equals(recipe.getStatus()));
             
             // Set timestamps to null to let lifecycle hooks handle them
             recipe.setCreatedAt(null);
@@ -351,6 +350,20 @@ public class RecipeController {
         }
     }
 
+    @GetMapping("/{id}/like-count")
+    public ResponseEntity<?> getLikeCount(
+        @PathVariable Long id
+    ) {
+        try {
+            int actualLikeCount = recipeLikeService.getActualLikeCount(id);
+            return ResponseEntity.ok(new LikeCountResponse(actualLikeCount));
+        } catch (Exception e) {
+            System.err.println("Error getting like count: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     // Response class for like endpoint
     private static class LikeResponse {
         private boolean liked;
@@ -363,6 +376,19 @@ public class RecipeController {
 
         public boolean isLiked() {
             return liked;
+        }
+
+        public int getLikeCount() {
+            return likeCount;
+        }
+    }
+
+    // Response class for like count endpoint
+    private static class LikeCountResponse {
+        private int likeCount;
+
+        public LikeCountResponse(int likeCount) {
+            this.likeCount = likeCount;
         }
 
         public int getLikeCount() {

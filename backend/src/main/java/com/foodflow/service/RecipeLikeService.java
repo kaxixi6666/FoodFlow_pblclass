@@ -28,20 +28,107 @@ public class RecipeLikeService {
 
             // Check if user has already liked this recipe
             // 检查用户是否已经点赞该食谱
-            List<RecipeLike> existingLikes = entityManager.createQuery(
-                "SELECT rl FROM RecipeLike rl WHERE rl.userId = :userId AND rl.recipeId = :recipeId", RecipeLike.class)
+            Long likeCount = (Long) entityManager.createQuery(
+                "SELECT COUNT(rl) FROM RecipeLike rl WHERE rl.userId = :userId AND rl.recipeId = :recipeId")
                 .setParameter("userId", userId)
                 .setParameter("recipeId", recipeId)
-                .getResultList();
+                .getSingleResult();
 
-            if (existingLikes.isEmpty()) {
+            System.out.println("User " + userId + " like count for recipe " + recipeId + ": " + likeCount);
+
+            if (likeCount == 0) {
                 // User has not liked this recipe yet - perform like action
                 // 用户尚未点赞该食谱 - 执行点赞操作
-                return performLike(recipe, userId);
+                System.out.println("User has not liked this recipe yet, performing like action");
+                
+                // Create recipe like record
+                // 创建食谱点赞记录
+                RecipeLike recipeLike = new RecipeLike();
+                recipeLike.setUserId(userId);
+                recipeLike.setRecipeId(recipe.getId());
+                
+                try {
+                    entityManager.persist(recipeLike);
+                    entityManager.flush(); // Force immediate persistence
+                    System.out.println("Like record created successfully");
+                    
+                    // Calculate actual like count from database
+                    // 从数据库计算实际点赞数
+                    int actualLikeCount = calculateLikeCount(recipeId);
+                    recipe.setLikeCount(actualLikeCount);
+                    entityManager.merge(recipe);
+                    System.out.println("Like count updated to: " + actualLikeCount);
+
+                    // Create notification for recipe author (only on first like)
+                    // 仅在首次点赞时为食谱作者创建通知
+                    if (recipe.getUserId() != null && !recipe.getUserId().equals(userId)) {
+                        try {
+                            User author = entityManager.find(User.class, recipe.getUserId());
+                            if (author != null) {
+                                User liker = entityManager.find(User.class, userId);
+                                String likerName = liker != null ? liker.getUsername() : "Someone";
+                                
+                                Notification notification = new Notification();
+                                notification.setUserId(recipe.getUserId());
+                                notification.setMessage(likerName + " liked your recipe '" + recipe.getName() + "'.");
+                                notification.setRecipeId(recipe.getId());
+                                notification.setIsRead(false);
+                                notification.setCreatedAt(LocalDateTime.now());
+                                notification.setUpdatedAt(LocalDateTime.now());
+                                
+                                entityManager.persist(notification);
+                                System.out.println("Notification created for recipe author");
+                            }
+                        } catch (Exception e) {
+                            // Continue with like operation even if notification fails
+                            // 即使通知创建失败，继续执行点赞操作
+                            System.err.println("Error creating notification: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    }
+
+                    return new LikeResult(true, actualLikeCount, null);
+                } catch (Exception e) {
+                    // Check if this is a unique constraint violation
+                    // 检查是否是唯一约束违反
+                    if (e.getMessage() != null && (e.getMessage().contains("unique constraint") || 
+                        e.getMessage().contains("Unique index or primary key violation") ||
+                        e.getMessage().contains("duplicate key") ||
+                        e.getMessage().contains("Duplicate entry"))) {
+                        // User has already liked this recipe (race condition), return current state
+                        // 用户已经点赞该食谱（竞态条件），返回当前状态
+                        System.err.println("User has already liked this recipe (unique constraint violation)");
+                        int actualLikeCount = calculateLikeCount(recipeId);
+                        return new LikeResult(true, actualLikeCount, null);
+                    }
+                    throw e; // Re-throw other exceptions
+                }
             } else {
                 // User has already liked this recipe - perform unlike action
                 // 用户已经点赞该食谱 - 执行取消点赞操作
-                return performUnlike(recipe, userId);
+                System.out.println("User has already liked this recipe, performing unlike action");
+                
+                // Delete recipe like record
+                // 删除食谱点赞记录
+                int deletedCount = entityManager.createQuery(
+                    "DELETE FROM RecipeLike rl WHERE rl.userId = :userId AND rl.recipeId = :recipeId")
+                    .setParameter("userId", userId)
+                    .setParameter("recipeId", recipe.getId())
+                    .executeUpdate();
+
+                System.out.println("Deleted " + deletedCount + " like records");
+
+                // Calculate actual like count from database
+                // 从数据库计算实际点赞数
+                int actualLikeCount = calculateLikeCount(recipeId);
+                recipe.setLikeCount(actualLikeCount);
+                entityManager.merge(recipe);
+                System.out.println("Like count updated to: " + actualLikeCount);
+
+                // Do NOT delete any notifications
+                // 不删除任何通知
+
+                return new LikeResult(false, actualLikeCount, null);
             }
         } catch (Exception e) {
             System.err.println("Error toggling like: " + e.getMessage());
@@ -50,76 +137,26 @@ public class RecipeLikeService {
         }
     }
 
-    private LikeResult performLike(Recipe recipe, Long userId) {
-        try {
-            // Create recipe like record
-            // 创建食谱点赞记录
-            RecipeLike recipeLike = new RecipeLike();
-            recipeLike.setUserId(userId);
-            recipeLike.setRecipeId(recipe.getId());
-            entityManager.persist(recipeLike);
 
-            // Increment like count (only on first like)
-            // 仅在首次点赞时增加点赞数
-            recipe.setLikeCount((recipe.getLikeCount() != null ? recipe.getLikeCount() : 0) + 1);
-            entityManager.merge(recipe);
 
-            // Create notification for recipe author (only on first like)
-            // 仅在首次点赞时为食谱作者创建通知
-            if (recipe.getUserId() != null && !recipe.getUserId().equals(userId)) {
-                try {
-                    User author = entityManager.find(User.class, recipe.getUserId());
-                    if (author != null) {
-                        User liker = entityManager.find(User.class, userId);
-                        String likerName = liker != null ? liker.getUsername() : "Someone";
-                        
-                        Notification notification = new Notification();
-                        notification.setUserId(recipe.getUserId());
-                        notification.setMessage(likerName + " liked your recipe '" + recipe.getName() + "'.");
-                        notification.setRecipeId(recipe.getId());
-                        notification.setIsRead(false);
-                        notification.setCreatedAt(LocalDateTime.now());
-                        notification.setUpdatedAt(LocalDateTime.now());
-                        
-                        entityManager.persist(notification);
-                    }
-                } catch (Exception e) {
-                    // Continue with like operation even if notification fails
-                    // 即使通知创建失败，继续执行点赞操作
-                    System.err.println("Error creating notification: " + e.getMessage());
-                    e.printStackTrace();
-                }
-            }
-
-            return new LikeResult(true, recipe.getLikeCount(), null);
-        } catch (Exception e) {
-            System.err.println("Error performing like operation: " + e.getMessage());
-            e.printStackTrace();
-            return new LikeResult(false, recipe.getLikeCount(), "Error performing like operation: " + e.getMessage());
-        }
+    /**
+     * Calculate actual like count from database
+     * 从数据库计算实际点赞数
+     */
+    private int calculateLikeCount(Long recipeId) {
+        Long count = (Long) entityManager.createQuery(
+            "SELECT COUNT(rl) FROM RecipeLike rl WHERE rl.recipeId = :recipeId")
+            .setParameter("recipeId", recipeId)
+            .getSingleResult();
+        return count.intValue();
     }
 
-    private LikeResult performUnlike(Recipe recipe, Long userId) {
-        try {
-            // Delete recipe like record
-            // 删除食谱点赞记录
-            int deletedCount = entityManager.createQuery(
-                "DELETE FROM RecipeLike rl WHERE rl.userId = :userId AND rl.recipeId = :recipeId")
-                .setParameter("userId", userId)
-                .setParameter("recipeId", recipe.getId())
-                .executeUpdate();
-
-            // Do NOT decrement like count (as per requirements)
-            // 不减少点赞数（根据要求）
-            // Do NOT delete any notifications
-            // 不删除任何通知
-
-            return new LikeResult(false, recipe.getLikeCount(), null);
-        } catch (Exception e) {
-            System.err.println("Error performing unlike operation: " + e.getMessage());
-            e.printStackTrace();
-            return new LikeResult(true, recipe.getLikeCount(), "Error performing unlike operation: " + e.getMessage());
-        }
+    /**
+     * Get the actual number of like records in the database for a recipe
+     * 获取数据库中食谱的实际点赞记录数
+     */
+    public int getActualLikeCount(Long recipeId) {
+        return calculateLikeCount(recipeId);
     }
 
     public static class LikeResult {
