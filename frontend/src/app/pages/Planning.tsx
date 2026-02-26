@@ -127,7 +127,7 @@ export function Planning() {
       setSelectedDate(null);
       
       setTimeout(() => setNotification(null), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding meal plan:', error);
       
       const existingMeal = mealPlans.find(
@@ -137,7 +137,17 @@ export function Planning() {
       if (existingMeal) {
         setNotification({
           type: 'error',
-          message: `A recipe already exists in this slot. Remove it first or try again.`
+          message: 'A recipe already exists in this slot. Remove it first or try again.'
+        });
+      } else if (error?.response?.status === 404) {
+        setNotification({
+          type: 'error',
+          message: 'Recipe not found. Please refresh the page and try again.'
+        });
+      } else if (error?.response?.status === 400) {
+        setNotification({
+          type: 'error',
+          message: 'Invalid request. Please check your input and try again.'
         });
       } else {
         setNotification({
