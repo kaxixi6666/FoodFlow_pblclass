@@ -48,9 +48,17 @@ export function Planning() {
 
   const fetchMealPlans = async () => {
     try {
+      const weekStart = new Date(currentWeekStart);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1); // Start from Monday
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6); // End on Sunday
+      
+      const startDateStr = weekStart.toISOString().split('T')[0];
+      const endDateStr = weekEnd.toISOString().split('T')[0];
+      
       let endpoint = API_ENDPOINTS.MEAL_PLANS;
       if (user?.id) {
-        endpoint += `?userId=${user.id}`;
+        endpoint += `?userId=${user.id}&startDate=${startDateStr}&endDate=${endDateStr}`;
       }
       const data = await fetchAPI(endpoint);
       setMealPlans(data);

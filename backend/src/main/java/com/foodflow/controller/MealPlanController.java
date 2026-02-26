@@ -20,14 +20,29 @@ public class MealPlanController {
     private EntityManager entityManager;
 
     @GetMapping
-    public ResponseEntity<List<MealPlan>> getAllMealPlans(@RequestParam(required = false) Long userId) {
+    public ResponseEntity<List<MealPlan>> getAllMealPlans(
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
         List<MealPlan> mealPlans;
         
         if (userId != null) {
-            mealPlans = entityManager.createQuery(
-                    "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe WHERE mp.recipe.userId = :userId", MealPlan.class)
-                    .setParameter("userId", userId)
-                    .getResultList();
+            if (startDate != null && endDate != null) {
+                LocalDate start = LocalDate.parse(startDate);
+                LocalDate end = LocalDate.parse(endDate);
+                
+                mealPlans = entityManager.createQuery(
+                        "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe WHERE (mp.recipe.userId = :userId OR mp.recipe.isPublic = true) AND mp.date BETWEEN :start AND :end", MealPlan.class)
+                        .setParameter("userId", userId)
+                        .setParameter("start", start)
+                        .setParameter("end", end)
+                        .getResultList();
+            } else {
+                mealPlans = entityManager.createQuery(
+                        "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe WHERE mp.recipe.userId = :userId", MealPlan.class)
+                        .setParameter("userId", userId)
+                        .getResultList();
+            }
         } else {
             mealPlans = entityManager.createQuery(
                     "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe", MealPlan.class)
