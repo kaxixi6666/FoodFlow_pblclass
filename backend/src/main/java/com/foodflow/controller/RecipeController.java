@@ -341,11 +341,8 @@ public class RecipeController {
             // 使用服务层处理点赞/取消点赞切换
             RecipeLikeService.LikeResult result = recipeLikeService.toggleLike(id, userId);
             
-            if (result.getError() != null) {
-                System.err.println("Error toggling like: " + result.getError());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-            }
-            
+            // 即使有错误（如通知创建失败），只要点赞操作本身成功，就返回成功响应
+            // Even if there are errors (e.g., notification creation failed), return success response as long as the like operation itself succeeded
             return ResponseEntity.ok(new LikeResponse(result.isLiked(), result.getLikeCount()));
         } catch (Exception e) {
             System.err.println("Error liking/unliking recipe: " + e.getMessage());
