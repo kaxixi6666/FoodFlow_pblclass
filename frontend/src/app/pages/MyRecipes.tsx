@@ -214,6 +214,7 @@ export function MyRecipes() {
       resetForm();
       
       apiClient.clearCacheForUrl(API_ENDPOINTS.RECIPES);
+      apiClient.clearCacheForUrl(API_ENDPOINTS.PUBLIC_RECIPES);
     } catch (error) {
       console.error('Error publishing recipe:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to publish recipe. Please try again.';

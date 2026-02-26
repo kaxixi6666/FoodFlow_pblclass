@@ -54,7 +54,10 @@ export function PublicRecipes() {
   useEffect(() => {
     const fetchRecipes = async () => {
       try {
-        const data = await fetchAPI(`${API_ENDPOINTS.RECIPES}/public`);
+        // Clear cache for public recipes to ensure fresh data
+        apiClient.clearCacheForUrl(API_ENDPOINTS.PUBLIC_RECIPES);
+        
+        const data = await fetchAPI(API_ENDPOINTS.PUBLIC_RECIPES, { cache: false });
         
         const publicRecipesList = data
           .sort((a: Recipe, b: Recipe) => {

@@ -25,7 +25,7 @@ export const fetchAPI = async (endpoint: string, options?: RequestInit) => {
     let response;
     switch (method) {
       case 'GET':
-        response = await apiClient.get(relativePath);
+        response = await apiClient.get(relativePath, { cache: options?.cache || true });
         break;
       case 'POST':
         response = await apiClient.post(relativePath, data);
@@ -37,7 +37,7 @@ export const fetchAPI = async (endpoint: string, options?: RequestInit) => {
         response = await apiClient.delete(relativePath);
         break;
       default:
-        response = await apiClient.get(relativePath);
+        response = await apiClient.get(relativePath, { cache: options?.cache || true });
     }
     
     return response;
@@ -60,7 +60,7 @@ export const fetchAPIWithResponse = async (endpoint: string, options?: RequestIn
     let response;
     switch (method) {
       case 'GET':
-        response = await apiClient.get(relativePath);
+        response = await apiClient.get(relativePath, { cache: options?.cache || true });
         break;
       case 'POST':
         response = await apiClient.post(relativePath, data);
@@ -72,7 +72,7 @@ export const fetchAPIWithResponse = async (endpoint: string, options?: RequestIn
         response = await apiClient.delete(relativePath);
         break;
       default:
-        response = await apiClient.get(relativePath);
+        response = await apiClient.get(relativePath, { cache: options?.cache || true });
     }
     
     return { data: response };
