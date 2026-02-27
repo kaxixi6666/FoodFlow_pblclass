@@ -35,14 +35,14 @@ public class MealPlanController {
                     LocalDate end = LocalDate.parse(endDate);
                     
                     mealPlans = entityManager.createQuery(
-                            "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe WHERE (mp.recipe.userId = :userId OR mp.recipe.isPublic = true) AND mp.date BETWEEN :start AND :end", MealPlan.class)
+                            "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe WHERE mp.userId = :userId AND mp.date BETWEEN :start AND :end", MealPlan.class)
                             .setParameter("userId", userId)
                             .setParameter("start", start)
                             .setParameter("end", end)
                             .getResultList();
                 } else {
                     mealPlans = entityManager.createQuery(
-                            "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe WHERE mp.recipe.userId = :userId", MealPlan.class)
+                            "SELECT mp FROM MealPlan mp JOIN FETCH mp.recipe WHERE mp.userId = :userId", MealPlan.class)
                             .setParameter("userId", userId)
                             .getResultList();
                 }
